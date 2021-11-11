@@ -13,6 +13,7 @@ class DuckBot(discord.Client):
             self.config = yaml.safe_load(config_file)
         self.token = self.config['token']
         self.name = 'Duck?'
+        self.daily_reminder_in_progress = False
 
         super().__init__(*args, **kwargs)
 
@@ -20,6 +21,17 @@ class DuckBot(discord.Client):
         print('Ready to go!')
 
     async def on_message(self, message):
+        # Daily reminder event
+        await self.daily_reminder(self, message)
+
+    # Helper function to send a message on a specific server to a specific channel
+    async def send_msg_to(self, msg_server, msg_channel, server, channel, msg, fp):
+        if msg_server.name == server and msg_channel.name == channel:
+            attachment = discord.File(fp)
+            await msg_channel.send(content=msg, file=attachment)
+
+    # Daily reminder function
+    async def daily_reminder(self, message):
         # Extract information about the message
         msg_server = message.guild
         msg_channel = message.channel
@@ -31,8 +43,8 @@ class DuckBot(discord.Client):
         remind_channel = 'argle-bargle'
         remind_msg = 'Congratulations! You\'re the first message of the day. Have a reminder! :)'
 
-        # If this bot was the one who sent the message, then ignore
-        if msg_user.name == self.name:
+        # If this bot was the one who sent the message or the daily reminder is already in progress, then ignore
+        if msg_user.name == self.name or self.daily_reminder_in_progress:
             return None
 
         # Date format used by the bot
@@ -49,6 +61,7 @@ class DuckBot(discord.Client):
             last_message_time = dt.datetime.strptime(self.config['last_message'], date_fmt)
 
             if last_message_time.date().day < send_time.date().day:
+                self.daily_reminder_in_progress = True
                 await self.send_msg_to(msg_server, msg_channel, remind_server, remind_channel, remind_msg, 'images/vaporeon.png')
 
         # Set this message as the last message
@@ -56,12 +69,7 @@ class DuckBot(discord.Client):
         with open(CONFIG_FILE, 'w') as config_file:
             yaml.safe_dump(self.config, config_file)
 
-    # Helper function to send a message on a specific server to a specific channel
-    async def send_msg_to(self, msg_server, msg_channel, server, channel, msg, fp):
-        if msg_server.name == server and msg_channel.name == channel:
-            attachment = discord.File(fp)
-            await msg_channel.send(content=msg, file=attachment)
-
+        self.daily_reminder_in_progress = False
 
 def main():
     # Create client for bot
