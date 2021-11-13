@@ -3,3 +3,5 @@ config.yml
 
 # Folders
 images/
+.metals/
+.vscode/
