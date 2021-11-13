@@ -60,7 +60,8 @@ class DuckBot(discord.Client):
         if 'last_message' in self.config.keys():
             last_message_time = dt.datetime.strptime(self.config['last_message'], date_fmt)
 
-            if last_message_time.date().day < send_time.date().day:
+            # Also a message only counts for the daily reminder if it is past 6 am AZT
+            if last_message_time.date().day < send_time.date().day and send_time.time().hour >= 6:
                 self.daily_reminder_in_progress = True
                 await self.send_msg_to(msg_server, msg_channel, remind_server, remind_channel, remind_msg, 'images/vaporeon.png')
 
