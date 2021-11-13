@@ -1,8 +1,7 @@
 import discord
 import yaml
 import datetime as dt
-
-from dateutil import tz
+import helpers
 
 CONFIG_FILE = 'config.yml'
 
@@ -22,15 +21,9 @@ class DuckBot(discord.Client):
 
     async def on_message(self, message):
         # Daily reminder event
-        await self.daily_reminder(self, message)
+        await self.daily_reminder(message)
 
-    # Helper function to send a message on a specific server to a specific channel
-    async def send_msg_to(self, msg_server, msg_channel, server, channel, msg, fp):
-        if msg_server.name == server and msg_channel.name == channel:
-            attachment = discord.File(fp)
-            await msg_channel.send(content=msg, file=attachment)
-
-    # Daily reminder function
+    # Daily reminder
     async def daily_reminder(self, message):
         # Extract information about the message
         msg_server = message.guild
@@ -47,30 +40,31 @@ class DuckBot(discord.Client):
         if msg_user.name == self.name or self.daily_reminder_in_progress:
             return None
 
-        # Date format used by the bot
-        date_fmt = '%m-%d-%Y'
-
         # Convert the message time from UTC to AZ time
-        utc_tz = tz.gettz('UTC')
-        az_tz = tz.gettz('America/Phoenix')
-        send_time = send_time.replace(tzinfo=utc_tz)
-        send_time = send_time.astimezone(az_tz)
+        send_time = helpers.convert_tz(send_time, 'UTC', 'America/Phoenix')
 
-        # If we find a message from "yesterday" and have not sent the daily reminder, send it
-        if 'last_message' in self.config.keys():
-            last_message_time = dt.datetime.strptime(self.config['last_message'], date_fmt)
+        # Get the message before the current message was sent (i.e. get the last message)
+        last_message = await msg_channel.history(limit=2).flatten()
 
-            # Also a message only counts for the daily reminder if it is past 6 am AZT
-            if last_message_time.date().day < send_time.date().day and send_time.time().hour >= 6:
-                self.daily_reminder_in_progress = True
-                await self.send_msg_to(msg_server, msg_channel, remind_server, remind_channel, remind_msg, 'images/vaporeon.png')
+        # Only do this check if we actually find there was a last message
+        if len(last_message) == 2:
+            last_message = last_message[1]
+            last_message_time = helpers.convert_tz(last_message.created_at, 'UTC', 'America/Phoenix')
 
-        # Set this message as the last message
-        self.config['last_message'] = send_time.strftime(date_fmt)
-        with open(CONFIG_FILE, 'w') as config_file:
-            yaml.safe_dump(self.config, config_file)
+            # If the last message was not from "yesterday" or is before 6 AM AZT then do nothing
+            if last_message_time.date().day >= send_time.date().day or send_time.time().hour < 6:
+                return None
 
+        # Send the daily reminder if all these checks are passed
+        self.daily_reminder_in_progress = True
+        await self.send_msg_to(msg_server, msg_channel, remind_server, remind_channel, remind_msg, 'images/vaporeon.png')
         self.daily_reminder_in_progress = False
+
+    # Helper function to send a message on a specific server to a specific channel
+    async def send_msg_to(self, msg_server, msg_channel, server, channel, msg, fp):
+        if msg_server.name == server and msg_channel.name == channel:
+            attachment = discord.File(fp)
+            await msg_channel.send(content=msg, file=attachment)
 
 def main():
     # Create client for bot
