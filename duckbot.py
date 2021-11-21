@@ -32,8 +32,8 @@ class DuckBot(discord.Client):
         send_time = message.created_at
 
         # Reminder server info
-        remind_server = 'Rip Daddy Weave'
-        remind_channel = 'argle-bargle'
+        remind_server = 'Botland'
+        remind_channel = 'test'
         remind_msg = 'Congratulations! You\'re the first message of the day. Have a reminder! :)'
 
         # If this bot was the one who sent the message or the daily reminder is already in progress, then ignore
@@ -43,12 +43,11 @@ class DuckBot(discord.Client):
         # Convert the message time from UTC to AZ time
         send_time = helpers.convert_tz(send_time, 'UTC', 'America/Phoenix')
 
-        # Get the message before the current message was sent (i.e. get the last message)
-        last_message = await msg_channel.history(limit=2).flatten()
+        # Get the last message this bot sent
+        last_message = await msg_channel.history().get(author=self.user)
 
-        # Only do this check if we actually find there was a last message
-        if len(last_message) == 2:
-            last_message = last_message[1]
+        # Only do this check if we actually find there was a last reminder message
+        if last_message and last_message.content == remind_msg:
             last_message_time = helpers.convert_tz(last_message.created_at, 'UTC', 'America/Phoenix')
 
             # If the last message was not from "yesterday" or is before 6 AM AZT then do nothing
