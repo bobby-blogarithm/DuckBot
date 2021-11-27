@@ -15,7 +15,12 @@ def convert_tz(current_time, origin_tz, desired_tz):
     return result.astimezone(to_tz)
 
 # Send a message on a specific server to a specific channel
-async def send_msg_to(msg_server, msg_channel, server, channel, msg, fp):
-    if msg_server.name == server and msg_channel.name == channel:
-        attachment = discord.File(fp)
-        await msg_channel.send(content=msg, file=attachment)
+async def send_msg_to(server : discord.Guild, channel : discord.TextChannel, msg, atchmt):
+    # Verify that the channel we are sending to is in the server we intend to sent to
+    send_channel = channel if channel == discord.utils.get(server.channels, id=channel.id) else discord.utils.get(server.channels, name=channel.name)
+
+    if atchmt:
+        attachment = discord.File(atchmt)
+        await send_channel.send(content=msg, file=attachment)
+    else:
+        await send_channel.send(content=msg)

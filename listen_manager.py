@@ -30,8 +30,10 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
         send_time = message.created_at
 
         # Reminder server info
-        remind_server = 'Rip Daddy Weave'
-        remind_channel = 'argle-bargle'
+        # remind_server = 'Rip Daddy Weave'
+        # remind_channel = 'argle-bargle'
+        remind_server = 'Botland'
+        remind_channel = 'test'
         remind_msg = 'Congratulations! You\'re the first message of the day. Have a reminder! :)'
 
         # If this bot was the one who sent the message or the bot receives a DM, then ignore
@@ -44,12 +46,11 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
         # The earliest time to find the previous reminder is at yesterday 6 am
         earliest_prev_time = send_time.replace(day=send_time.day - 1, hour=6, minute=0, second=0, microsecond=0)
         earliest_prev_time = helpers.convert_tz(earliest_prev_time, 'America/Phoenix', 'UTC')
-        earliest_prev_time = send_time.replace(tzinfo=None)
+        earliest_prev_time = earliest_prev_time.replace(tzinfo=None)
 
         # Get the last message this bot sent
-        last_msg_cond = lambda m: m.author == self.bot.user and m.content == remind_msg
         if not self.daily_reminder_msg.prev:
-            last_message = await msg_channel.history(after=earliest_prev_time, limit=1).find(last_msg_cond)
+            last_message = await msg_channel.history(after=earliest_prev_time, oldest_first=False).get(author=self.bot.user, content=remind_msg)
         else:
             last_message = self.daily_reminder_msg.prev
 
@@ -61,12 +62,17 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
             if last_message_time.date().day >= send_time.day or send_time.hour < 6:
                 return None
 
+        # If the server and channel the message came from are not the server and channel we want to remind
+        # then ignore
+        if msg_server.name != remind_server or msg_channel.name != remind_channel:
+            return None
+
         # Send the daily reminder if all these checks are passed
-        await helpers.send_msg_to(msg_server, msg_channel, remind_server, remind_channel, remind_msg, 'images/vaporeon.png')
+        await helpers.send_msg_to(msg_server, msg_channel, remind_msg, 'images/vaporeon.png')
         
         # Set the previous daily reminder to this one
         self.daily_reminder_msg.prev = last_message
 
         # Set the cooldown for the daily reminder until tomorrow at 6 am
         self.daily_reminder_msg.cd = send_time.replace(day=send_time.day + 1, hour=6, minute=0, second=0, microsecond=0) - send_time
-        await asyncio.sleep(self.daily_reminder_cd.seconds)
+        await asyncio.sleep(self.daily_reminder_msg.cd.seconds)
