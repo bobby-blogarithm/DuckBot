@@ -30,12 +30,12 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
         send_time = message.created_at
 
         # Reminder server info
-        remind_server = 'Botland'
-        remind_channel = 'test'
+        remind_server = 'Rip Daddy Weave'
+        remind_channel = 'argle-bargle'
         remind_msg = 'Congratulations! You\'re the first message of the day. Have a reminder! :)'
 
-        # If this bot was the one who sent the message, then ignore
-        if msg_user == self.bot.user:
+        # If this bot was the one who sent the message or the bot receives a DM, then ignore
+        if msg_user == self.bot.user or not msg_server or not msg_channel:
             return None
 
         # Convert the message time from UTC to AZ time
