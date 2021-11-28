@@ -6,3 +6,4 @@ images/
 .metals/
 .vscode/
 __pycache__/
+data/
