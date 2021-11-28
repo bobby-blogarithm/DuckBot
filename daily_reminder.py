@@ -16,10 +16,8 @@ class DailyReminder:
         send_time = message.created_at
 
         # Reminder server info
-        # remind_server = 'Rip Daddy Weave'
-        # remind_channel = 'argle-bargle'
-        remind_server = 'Botland'
-        remind_channel = 'test'
+        remind_server = self.bot.remind_server
+        remind_channel = self.bot.remind_channel
         remind_msg = 'Congratulations! You\'re the first message of the day. Have a reminder! :)'
 
         # If this bot was the one who sent the message or the bot receives a DM, then ignore

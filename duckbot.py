@@ -14,6 +14,8 @@ class DuckBot(disc_cmds.Bot):
         with open(CONFIG_FILE) as config_file:
             self.config = yaml.safe_load(config_file)
         self.token = self.config['token']
+        self.remind_server = self.config['reminder-server']
+        self.remind_channel = self.config['reminder-channel']
 
         # Attach cogs to bot
         self.add_cog(CommandManager(self))
