@@ -2,6 +2,7 @@ import asyncio
 import helpers
 import os
 import pandas as pd
+import datetime as dt
 
 LEADERBOARD_FILE = 'data/reminder_leaderboard.csv'
 
@@ -33,8 +34,9 @@ class DailyReminder:
         send_time = helpers.convert_tz(send_time, 'UTC', 'America/Phoenix')
 
         # The earliest time to find the previous reminder is at yesterday 6 am
-        earliest_prev_time = send_time.replace(day=send_time.day - 1, hour=6, minute=0, second=0, microsecond=0)
-        earliest_prev_time = helpers.convert_tz(earliest_prev_time, 'America/Phoenix', 'UTC')
+        yesterday_time = send_time - dt.timedelta(days=1)
+        yesterday_time = yesterday_time.replace(hour=6, minute=0, second=0, microsecond=0)
+        earliest_prev_time = helpers.convert_tz(yesterday_time, 'America/Phoenix', 'UTC')
         earliest_prev_time = earliest_prev_time.replace(tzinfo=None)
 
         # Get the last message this bot sent
@@ -43,12 +45,12 @@ class DailyReminder:
         else:
             last_message = self.prev
 
-        # Only do this check if we actually find there was a last reminder message
+        # Check that we haven't already sent a reminder today
         if last_message:
             last_message_time = helpers.convert_tz(last_message.created_at, 'UTC', 'America/Phoenix')
 
-            # If the last message was not from "yesterday" or is before 6 AM AZT then do nothing
-            if last_message_time.date().day >= send_time.day or send_time.hour < 6:
+            # Last reminder was not sent today (or later) 
+            if last_message_time.date() >= send_time or send_time.hour < 6:
                 return None
 
         # If the server and channel the message came from are not the server and channel we want to remind
@@ -67,7 +69,8 @@ class DailyReminder:
         self.leaderboard.save()
 
         # Set the cooldown for the daily reminder until tomorrow at 6 am
-        self.cd = send_time.replace(day=send_time.day + 1, hour=6, minute=0, second=0, microsecond=0) - send_time
+        tomorrow_time = send_time + dt.timedelta(days=1)
+        self.cd = tomorrow_time.replace(hour=6, minute=0, second=0, microsecond=0) - send_time
         await asyncio.sleep(self.cd.seconds)
 
 # TODO This leaderboard class should be abstracted out later, but for now this is fine
@@ -80,7 +83,6 @@ class ReminderLeaderboard:
         self.scores[name] = score
 
     def add(self, name, score):
-        print(self.scores)
         if name not in self.scores.keys():
             self.scores[name] = score
         else:
