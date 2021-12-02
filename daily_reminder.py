@@ -50,7 +50,7 @@ class DailyReminder:
             last_message_time = helpers.convert_tz(last_message.created_at, 'UTC', 'America/Phoenix')
 
             # Last reminder was not sent today (or later) 
-            if last_message_time.date() >= send_time or send_time.hour < 6:
+            if last_message_time.date() >= send_time.date() or send_time.hour < 6:
                 return None
 
         # If the server and channel the message came from are not the server and channel we want to remind
@@ -104,3 +104,9 @@ class ReminderLeaderboard:
         scores_df = pd.DataFrame([{'Name': name, 'Score': score} for name, score in self.scores.items()])
         scores_df.set_index('Name')
         scores_df.to_csv(self.leaderboard_file, index=False)
+
+    # A generator used to get the rankings of the leaderboard
+    def get_rankings(self):
+        sorted_scores = sorted([(name, score) for name, score in self.scores.items()], key=lambda x:x[1], reverse=True)
+        for score in sorted_scores:
+            yield score
