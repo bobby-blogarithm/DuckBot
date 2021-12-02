@@ -20,7 +20,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
             print('You are not the owner')
 
     @disc_cmds.command(name='leaderboard')
-    async def reminder_leaderboard(self, ctx, limit : int):
+    async def reminder_leaderboard(self, ctx, limit: int = 10):
         # Get the rankings from the reminder leaderboard
         leaderboard = ReminderLeaderboard('data/reminder_leaderboard.csv')
         rankings = leaderboard.get_rankings()
