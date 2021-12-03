@@ -24,20 +24,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         # TODO Implement pagination
         # Get the rankings from the reminder leaderboard
         economy = Economy(ctx.guild.name)
-        scores = economy.get_sorted_scores()
-
-        # Get the actual rank numbers for the users up to the given limit
-        rankings = []
-        rank = 1
-        prev_score = None
-        for i, score in enumerate(scores):
-            if i == limit:
-                break
-            # Only increment the rank when the next ranked is actually lower and not tied
-            if prev_score and score[1] < prev_score:
-                rank += 1
-            rankings.append((rank, *score))
-            prev_score = score[1]
+        rankings = [rank for rank in economy.get_rankings(limit)]
 
         # Create the leaderboard message and send
         name_string = '\n'.join([rank[1] for rank in rankings])

@@ -49,3 +49,20 @@ class Economy:
         sorted_scores = sorted([(name, score) for name, score in self.scores.items()], key=lambda x:x[1], reverse=True)
         for score in sorted_scores:
             yield score
+
+    def get_rankings(self, limit : int = 10):
+        # Get the actual rank numbers for the users up to the given limit
+        rank = 1
+        num_tied = 0
+        prev_score = None
+        for i, score in enumerate(self.get_sorted_scores()):
+            if i == limit:
+                raise StopIteration
+            # Only increment the rank when the next ranked is actually lower and not tied
+            if prev_score and score[1] < prev_score:
+                rank += 1 + num_tied
+                num_tied = 0
+            elif score[1] == prev_score:
+                num_tied += 1
+            yield (rank, *score)
+            prev_score = score[1]
