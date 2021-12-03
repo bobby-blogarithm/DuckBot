@@ -1,12 +1,8 @@
 import discord
 import discord.ext.commands as disc_cmds
-import os
-import sys
 import helpers
 import discord
 import duck_facts
-import io
-import aiohttp
 
 from economy import Economy
 
@@ -47,11 +43,12 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         image = duck.get_image()
         fact = duck.get_fact()
 
-        async with aiohttp.ClientSession() as session, session.get(image) as resp:
-            if resp.status != 200:
-                return await ctx.send('Could not download file...')
-            data = io.BytesIO(await resp.read())
-            await ctx.send(file=discord.File(data, 'duck.png'), content=fact)
+        fact_embed = discord.Embed()
+        fact_embed.title = 'Duck Fact'
+        fact_embed.description = fact
+        fact_embed.set_image(url=image)
+
+        await ctx.send(embed=fact_embed)
 
     # TODO This command should be used for the bot to update itself
     # ! DEPRECATED for now
