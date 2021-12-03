@@ -1,10 +1,8 @@
 import asyncio
 import helpers
-import os
-import pandas as pd
 import datetime as dt
 
-LEADERBOARD_FILE = 'data/reminder_leaderboard.csv'
+from economy import Economy
 
 class DailyReminder:
     def __init__(self, bot):
@@ -12,7 +10,7 @@ class DailyReminder:
         self.cd = 0
         self.prev = None
         self.bot = bot
-        self.leaderboard = ReminderLeaderboard(LEADERBOARD_FILE)
+        self.econ = Economy(self.bot.remind_server)
 
     async def remind(self, message):
         # Extract information about the message
@@ -65,48 +63,10 @@ class DailyReminder:
         self.prev = last_message
 
         # Update the leaderboard with the score then save it
-        self.leaderboard.add(msg_user.name, 1)
-        self.leaderboard.save()
+        self.econ.add(msg_user.name, 10)
+        self.econ.save()
 
         # Set the cooldown for the daily reminder until tomorrow at 6 am
         tomorrow_time = send_time + dt.timedelta(days=1)
         self.cd = tomorrow_time.replace(hour=6, minute=0, second=0, microsecond=0) - send_time
         await asyncio.sleep(self.cd.seconds)
-
-# TODO This leaderboard class should be abstracted out later, but for now this is fine
-class ReminderLeaderboard:
-    def __init__(self, leaderboard_file):
-        self.scores = self.load(leaderboard_file) if os.path.exists(leaderboard_file) else {}
-        self.leaderboard_file = leaderboard_file
-
-    def update(self, name, score):
-        self.scores[name] = score
-
-    def add(self, name, score):
-        if name not in self.scores.keys():
-            self.scores[name] = score
-        else:
-            self.scores[name] += score
-
-    def remove(self, name, score):
-        if name not in self.scores.keys():
-            print('Cannot remove score from a user with no score')
-            return None
-        self.scores[name] -= score
-
-    def load(self, fp):
-        scores_df = pd.read_csv(fp, index_col=0)
-        scores = scores_df.to_dict(orient='index')
-        scores = {name: score['Score'] for name, score in scores.items()}
-        return scores
-
-    def save(self):
-        scores_df = pd.DataFrame([{'Name': name, 'Score': score} for name, score in self.scores.items()])
-        scores_df.set_index('Name')
-        scores_df.to_csv(self.leaderboard_file, index=False)
-
-    # A generator used to get the rankings of the leaderboard
-    def get_rankings(self):
-        sorted_scores = sorted([(name, score) for name, score in self.scores.items()], key=lambda x:x[1], reverse=True)
-        for score in sorted_scores:
-            yield score

@@ -5,7 +5,7 @@ import sys
 import helpers
 import discord
 
-from daily_reminder import ReminderLeaderboard
+from economy import Economy
 
 class CommandManager(disc_cmds.Cog, name='CommandManager'):
     def __init__(self, bot):
@@ -21,26 +21,40 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
 
     @disc_cmds.command(name='leaderboard')
     async def reminder_leaderboard(self, ctx, limit: int = 10):
+        # TODO Implement pagination
         # Get the rankings from the reminder leaderboard
-        leaderboard = ReminderLeaderboard('data/reminder_leaderboard.csv')
-        rankings = leaderboard.get_rankings()
+        economy = Economy(ctx.guild.name)
+        scores = economy.get_sorted_scores()
 
-        # Python is stupid and generators don't have iteration limits, so here it is a for-loop with an if statement
-        ranks = []
-        for i, ranking in enumerate(rankings):
+        # Get the actual rank numbers for the users up to the given limit
+        rankings = []
+        rank = 1
+        prev_score = None
+        for i, score in enumerate(scores):
             if i == limit:
                 break
-            ranks.append(ranking)
+            # Only increment the rank when the next ranked is actually lower and not tied
+            if prev_score and score[1] < prev_score:
+                rank += 1
+            rankings.append((rank, *score))
+            prev_score = score[1]
 
         # Create the leaderboard message and send
+        name_string = '\n'.join([rank[1] for rank in rankings])
+        point_string = '\n'.join([str(rank[2]) for rank in rankings])
+        rank_string = '\n'.join([str(rank[0]) for rank in rankings])
+
         leaderboard_embed = discord.Embed()
-        leaderboard_embed.add_field(name='Names', value='\n'.join([rank[0] for rank in ranks]))
-        leaderboard_embed.add_field(name='Scores', value='\n'.join([str(rank[1]) for rank in ranks]))
+        leaderboard_embed.title = f'Economy Rankings for {ctx.guild.name}'
+        leaderboard_embed.add_field(name='Rank', value=rank_string if rank_string else 'N/A')
+        leaderboard_embed.add_field(name='Names', value=name_string if name_string else 'N/A')
+        leaderboard_embed.add_field(name='Points', value=point_string if point_string else 'N/A')
         await ctx.send(embed=leaderboard_embed)
 
     # TODO This command should be used for the bot to update itself
-    @disc_cmds.command(name='update')
-    async def update(self, ctx):
-        print(sys.executable)
-        print(sys.argv)
-        await ctx.send('you called?')
+    # ! DEPRECATED for now
+    # @disc_cmds.command(name='update')
+    # async def update(self, ctx):
+    #     print(sys.executable)
+    #     print(sys.argv)
+    #     await ctx.send('you called?')
