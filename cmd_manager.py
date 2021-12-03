@@ -4,7 +4,7 @@ import os
 import sys
 import helpers
 import discord
-import duck_api
+import duck_facts
 import io
 import aiohttp
 
@@ -43,18 +43,15 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
 
     @disc_cmds.command(name='duckfact')
     async def duck_fact(self, ctx):
-        duck = duck_api.DuckFact()
-        image = duck.getImage()
-        fact = duck.getFact()
+        duck = duck_facts.DuckFact()
+        image = duck.get_image()
+        fact = duck.get_fact()
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(image) as resp:
-                if resp.status != 200:
-                    return await ctx.send('Could not download file...')
-                data = io.BytesIO(await resp.read())
-                await ctx.send(file=discord.File(data, 'duck.png'), content=fact)
-
-
+        async with aiohttp.ClientSession() as session, session.get(image) as resp:
+            if resp.status != 200:
+                return await ctx.send('Could not download file...')
+            data = io.BytesIO(await resp.read())
+            await ctx.send(file=discord.File(data, 'duck.png'), content=fact)
 
     # TODO This command should be used for the bot to update itself
     # ! DEPRECATED for now
