@@ -2,9 +2,9 @@ import discord
 import discord.ext.commands as disc_cmds
 import helpers
 import discord
-import duck_facts
 
 from economy import Economy
+from duck_facts import DuckFact
 
 class CommandManager(disc_cmds.Cog, name='CommandManager'):
     def __init__(self, bot):
@@ -38,8 +38,11 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         await ctx.send(embed=leaderboard_embed)
 
     @disc_cmds.command(name='duckfact')
-    async def duck_fact(self, ctx):
-        duck = duck_facts.DuckFact()
+    async def duck_fact(self, ctx, *args):
+        if len(args) > 0:
+            await ctx.send(content='Invalid number of arguments, please try again.')
+            return None
+        duck = DuckFact()
         image = duck.get_image()
         fact, fact_num = duck.get_fact()
 
