@@ -53,6 +53,13 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
 
         await ctx.send(embed=fact_embed)
 
+    @disc_cmds.command(name='shop')
+    async def shop(self, ctx):
+        shop_msg = await ctx.send(content='test shop')
+        arrows = ['\U000025C0', '\U000025B6']
+        for arrow in arrows:
+            await shop_msg.add_reaction(arrow)
+
     # TODO This command should be used for the bot to update itself
     # ! DEPRECATED for now
     # @disc_cmds.command(name='update')

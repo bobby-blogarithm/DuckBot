@@ -62,7 +62,7 @@ class DailyReminder:
         # Set the previous daily reminder to this one
         self.prev = last_message
 
-        # Update the leaderboard with the score then save it
+        # Add points to the user that triggered this then save it
         self.econ.add(msg_user.name, 10)
         self.econ.save()
 

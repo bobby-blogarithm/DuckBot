@@ -6,9 +6,7 @@ from .constants import ECON_FILE
 class Economy:
     def __init__(self, server):
         # Parse the server name before creating or accessing the file for it
-        parsed_server_name = ' '.join(server.split())
-        parsed_server_name = parsed_server_name.replace(' ', '-')
-        parsed_server_name = ''.join(char for char in parsed_server_name if char.isalnum())
+        parsed_server_name = ''.join(char for char in server if char.isalnum())
 
         self.econ_file = ECON_FILE.replace('SERVER', parsed_server_name)
         self.scores = self.load(self.econ_file) if os.path.exists(self.econ_file) else {}
@@ -56,13 +54,16 @@ class Economy:
         num_tied = 0
         prev_score = None
         for i, score in enumerate(self.get_sorted_scores()):
+            # Stop returning values if we have reached our limit
             if i == limit:
                 raise StopIteration
+
             # Only increment the rank when the next ranked is actually lower and not tied
             if prev_score and score[1] < prev_score:
                 rank += 1 + num_tied
                 num_tied = 0
             elif score[1] == prev_score:
                 num_tied += 1
+
             yield (rank, *score)
             prev_score = score[1]
