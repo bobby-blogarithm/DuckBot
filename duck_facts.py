@@ -13,7 +13,7 @@ class DuckFact():
             fact = file.readlines()
             fact_num = random.randint(1, len(fact)) - 1
             
-        return fact[fact_num]
+        return fact[fact_num], fact_num + 1
 
     def get_image(self):
         with open(self.images, 'r', encoding='utf8') as file:

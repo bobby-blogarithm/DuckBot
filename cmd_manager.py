@@ -41,10 +41,10 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
     async def duck_fact(self, ctx):
         duck = duck_facts.DuckFact()
         image = duck.get_image()
-        fact = duck.get_fact()
+        fact, fact_num = duck.get_fact()
 
         fact_embed = discord.Embed()
-        fact_embed.title = 'Duck Fact'
+        fact_embed.title = f'Duck Fact #{fact_num}'
         fact_embed.description = fact
         fact_embed.set_image(url=image)
 
