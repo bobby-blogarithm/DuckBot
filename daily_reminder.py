@@ -40,12 +40,17 @@ class DailyReminder:
         # Get the last message this bot sent
         if not self.prev:
             last_message = await msg_channel.history(after=earliest_prev_time, oldest_first=False).get(author=self.bot.user, content=remind_msg)
+            self.prev = last_message
         else:
             last_message = self.prev
 
         # Check that we haven't already sent a reminder today
         if last_message:
             last_message_time = helpers.convert_tz(last_message.created_at, 'UTC', 'America/Phoenix')
+
+            # If we are still on cooldown then send back
+            if self.cd and (send_time - self.cd) < last_message_time:
+                return None
 
             # Last reminder was not sent today (or later) 
             if last_message_time.date() >= send_time.date() or send_time.hour < 6:
@@ -56,11 +61,8 @@ class DailyReminder:
         if msg_server.name != remind_server or msg_channel.name != remind_channel:
             return None
 
-        # Send the daily reminder if all these checks are passed
-        await helpers.send_msg_to(msg_server, msg_channel, remind_msg, 'images/vaporeon.png')
-        
-        # Set the previous daily reminder to this one
-        self.prev = last_message
+        # Send the daily reminder if all these checks are passed and set the previous daily reminder to this one
+        self.prev = await helpers.send_msg_to(msg_server, msg_channel, remind_msg, 'images/vaporeon.png')
 
         # Add points to the user that triggered this then save it
         self.econ.add(msg_user.name, 10)
@@ -69,4 +71,3 @@ class DailyReminder:
         # Set the cooldown for the daily reminder until tomorrow at 6 am
         tomorrow_time = send_time + dt.timedelta(days=1)
         self.cd = tomorrow_time.replace(hour=6, minute=0, second=0, microsecond=0) - send_time
-        await asyncio.sleep(self.cd.seconds)
