@@ -1,7 +1,7 @@
+import asyncio
 import discord
 import discord.ext.commands as disc_cmds
 import helpers
-import discord
 
 from economy import Economy
 from duck_facts import DuckFact
@@ -59,6 +59,29 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         arrows = ['\U000025C0', '\U000025B6']
         for arrow in arrows:
             await shop_msg.add_reaction(arrow)
+
+    @disc_cmds.command(name='timer')
+    async def timer(self, ctx, duration : int, unit='sec', name='', *args):
+        if len(args) > 0:
+            await ctx.send(content='Invalid number of arguments, please try again.')
+            return None
+
+        sec_duration = duration
+        if unit in ['min', 'minute', 'minutes', 'm']:
+            sec_duration = duration * 60
+        elif unit in ['hr', 'hour', 'hours' 'h']:
+            sec_duration = duration * 3600
+        elif unit in ['day', 'days', 'd']:
+            sec_duration = duration * 86400
+        elif unit not in ['sec', 'second', 'seconds', 's']:
+            await ctx.send(content='Invalid time unit specified, please try again.')
+            return None
+
+        padded_name = name + (' ' if name else '')
+        
+        await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set for {duration} {unit}(s)', delete_after=sec_duration)
+        await asyncio.sleep(sec_duration)
+        await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is up!', delete_after=300.0)
 
     # TODO This command should be used for the bot to update itself
     # ! DEPRECATED for now

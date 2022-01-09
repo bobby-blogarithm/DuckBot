@@ -19,5 +19,5 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
             await self.daily_reminder.remind(message)
 
     @disc_cmds.Cog.listener(name='on_raw_reaction_add')
-    async def on_raw_reaction_add(reaction):
+    async def on_raw_reaction_add(self, reaction):
         print(reaction.message_id)

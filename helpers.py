@@ -1,5 +1,6 @@
 import discord
 from dateutil import tz
+from string import Template
 
 """
     This file is dedicated to utility and helper functions that
@@ -24,3 +25,14 @@ async def send_msg_to(server : discord.Guild, channel : discord.TextChannel, msg
         await send_channel.send(content=msg, file=attachment)
     else:
         await send_channel.send(content=msg)
+
+# Wrapper class for string.Template using the "%" delimiter
+class DeltaTemplate(Template):
+    delimiter = '%'
+
+def strftdelta(tdelta, fmt):
+    d = {'D': tdelta.days}
+    d['H'], rem = divmod(tdelta.seconds, 3600)
+    d['M'], d['S'] = divmod(rem, 60)
+    template = DeltaTemplate(fmt)
+    return template.subtitute(**d)
