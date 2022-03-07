@@ -39,6 +39,10 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
         # Get the embed from the inventory and the current page
         inv_embed = inv_msg.embeds[0]
         curr_page = int(inv_embed.footer.text[5:inv_embed.footer.text.find('/') - 1]) - 1
+
+        # Check if this is on an inventory message
+        if 'Inventory' not in inv_embed.title:
+            return None
         
         # Remove the reaction
         await inv_msg.remove_reaction(reaction.emoji, reaction.member)
@@ -55,7 +59,7 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
         name_str = '\n'.join([item.name for item in pages[curr_page]])
         quantity_str = '\n'.join([str(item.quantity) for item in pages[curr_page]])
 
-        inv_embed.title = f'{inv_server.name} Shop'
+        inv_embed.title = f'{reaction.member.name}\'s Inventory'
         inv_embed.set_field_at(0, name='Name', value=name_str if name_str else 'N/A')
         inv_embed.set_field_at(1, name='Quantity', value=quantity_str if quantity_str else 'N/A')
         inv_embed.set_footer(text=f'Page {curr_page + 1} / {len(pages)}')
@@ -80,6 +84,10 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
         # Get the embed from the shop and the current page
         shop_embed = shop_msg.embeds[0]
         curr_page = int(shop_embed.footer.text[5:shop_embed.footer.text.find('/') - 1]) - 1
+
+        # Check if this is on a shop message
+        if 'Shop' not in shop_embed.title:
+            return None
         
         # Remove the reaction
         await shop_msg.remove_reaction(reaction.emoji, reaction.member)
