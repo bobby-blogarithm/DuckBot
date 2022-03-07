@@ -1,12 +1,11 @@
 import csv
 import json
 import os
-import errors
 
-from economy import Economy
-from constants import SHOP_FILE, INVENTORY_FILE, CATALOG_FILE
+from .economy import Economy
+from .constants import SHOP_FILE, INVENTORY_FILE, CATALOG_FILE
+from .errors import NotAnItemError
 
-# TODO Implement shop to buy items for points
 class Shop:
     _instance = None
 
@@ -97,7 +96,7 @@ class Item:
             self.cost = data['cost']
             self.quantity = data['quantity']
         except KeyError as e:
-            raise errors.NotAnItemError(f'Dictionary could not be converted to an item without key(s): {", ".join(e.args)}')
+            raise NotAnItemError(f'Dictionary could not be converted to an item without key(s): {", ".join(e.args)}')
         return self
 
     # This function exists purely because I am lazy
@@ -131,11 +130,21 @@ class Inventory:
                 return item
         return None
 
-    def buy(self, item_id : int, amount : int):
+    def buy(self, item, amount : int):
         # Ensure that the inventory is a set of items
         if not isinstance(self.items, set) and not self.items:
             self.items = set()
+
         # Get the item from the shop
+        if isinstance(item, str):
+            try:
+                item_id = next(i.id for i in self.shop.items if i.name == item)
+            except StopIteration:
+                raise NotAnItemError(f'Item {item} does not exist to be purchased')
+        elif isinstance(item, int):
+            item_id = item
+        else:
+            raise NotAnItemError('Invalid item being purchased')
         shop_item = self.shop[item_id]
 
         # You can only purchase the item if the shop has it in stock
@@ -240,20 +249,19 @@ class Catalog:
             json.dump([item.to_dict() for item in self.items], f)
 
 if __name__ == '__main__':
-    item1 = Item(1, 'test item 1', 10, 1)
-    item2 = Item(2, 'test item 2', 5, 50)
+    num_items = 11
+    items = [Item(i, f'test item {i + 1}', 1, 100) for i in range(num_items)]
 
     catalog = Catalog.get_instance('Botland')
     shop = Shop.get_instance('Botland')
 
     player_inv = Inventory('Botland', 'Dark?')
 
-    # catalog.add_item(item1)
-    # catalog.add_item(item2)
-    shop.add_item(item1)
-    shop.add_item(item2)
-    player_inv.buy(1, 1)
-    player_inv.buy(2, 1)
+    for item in items:
+        catalog.add_item(item)
+        shop.add_item(item)
+    # player_inv.buy(1, 1)
+    # player_inv.buy(2, 1)
 
     shop.save()
     player_inv.save()

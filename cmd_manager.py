@@ -1,9 +1,11 @@
 import asyncio
 import discord
 import discord.ext.commands as disc_cmds
-import helpers
+from economy.errors import NotAnItemError
+import helpers.discord as discord_helpers
 
-from economy import Economy
+from collections import defaultdict
+from economy import Economy, Shop, Inventory
 from duck_facts import DuckFact
 
 class CommandManager(disc_cmds.Cog, name='CommandManager'):
@@ -14,7 +16,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
     async def say(self, ctx, server : discord.Guild, channel : discord.TextChannel, msg):
         owner = await self.bot.is_owner(ctx.author)
         if owner:
-            await helpers.send_msg_to(server, channel, msg, None)
+            await discord_helpers.send_msg_to(server, channel, msg, None)
         else:
             print('You are not the owner')
 
@@ -22,7 +24,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
     async def reminder_leaderboard(self, ctx, limit: int = 10):
         # TODO Implement pagination
         # Get the rankings from the reminder leaderboard
-        economy = Economy(ctx.guild.name)
+        economy = Economy.get_instance(ctx.guild.name)
         rankings = [rank for rank in economy.get_rankings(limit)]
 
         # Create the leaderboard message and send
@@ -53,12 +55,82 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
 
         await ctx.send(embed=fact_embed)
 
+    @disc_cmds.command(name='inventory')
+    async def inventory(self, ctx):
+        # Get the member's inventory
+        inv = Inventory(ctx.guild.name, ctx.author.name)
+
+        # Initial inventory message
+        inv_msg = await ctx.send(content=f'Loading {ctx.author.name}\'s inventory...', delete_after=300.0)
+
+        # Generate pagination for inventory
+        pages = defaultdict(list)
+        for i, item in enumerate(inv.items):
+            page_num = (i // 10)
+            pages[page_num].append(item)
+
+        # Generate the inventory content as a message
+        name_str = '\n'.join([item.name for item in pages[0]])
+        quantity_str = '\n'.join([str(item.quantity) for item in pages[0]])
+
+        inv_embed = discord.Embed()
+        inv_embed.title = f'{ctx.author.name}\'s Inventory'
+        inv_embed.add_field(name='Name', value=name_str if name_str else 'N/A')
+        inv_embed.add_field(name='Quantity', value=quantity_str if quantity_str else 'N/A')
+        inv_embed.set_footer(text=f'Page 1 / {len(pages)}')
+        await inv_msg.edit(content='', embed=inv_embed)
+
+        # Generate arrows if pages are used
+        arrows = ['\U000025C0', '\U000025B6']
+        if len(pages.keys()) > 1:
+            for arrow in arrows:
+                await inv_msg.add_reaction(arrow)
+
+    @disc_cmds.command(name='buy')
+    async def buy(self, ctx, quantity : int, item_name):
+        # Get the member's inventory
+        inv = Inventory(ctx.guild.name, ctx.author.name)
+
+        # Purchase the item
+        try:
+            inv.buy(item_name, quantity)
+        except NotAnItemError:
+            await ctx.author.send(f'The item {item_name} cannot be purchased.')
+            return None
+        await ctx.author.send(f'You have purchased {quantity} {item_name}.')
+
     @disc_cmds.command(name='shop')
     async def shop(self, ctx):
-        shop_msg = await ctx.send(content='test shop')
+        # Get the shop for the server
+        shop = Shop.get_instance(ctx.guild.name)
+
+        # Initial shop message
+        shop_msg = await ctx.send(content='Loading shop...', delete_after=600.0)
+
+        # Generate pagination for shop
+        pages = defaultdict(list)
+        for i, item in enumerate(shop.items):
+            page_num = (i // 10)
+            pages[page_num].append(item)
+
+        # Generate the shop content as a message
+        name_str = '\n'.join([item.name for item in pages[0]])
+        quantity_str = '\n'.join([str(item.quantity) for item in pages[0]])
+        cost_str = '\n'.join([str(item.cost) for item in pages[0]])
+
+        shop_embed = discord.Embed()
+        shop_embed.title = f'{ctx.guild.name} Shop'
+        shop_embed.add_field(name='Name', value=name_str if name_str else 'N/A')
+        shop_embed.add_field(name='Quantity', value=quantity_str if quantity_str else 'N/A')
+        shop_embed.add_field(name='Price', value=cost_str if cost_str else 'N/A')
+        shop_embed.set_footer(text=f'Page 1 / {len(pages)}')
+        await shop_msg.edit(content='', embed=shop_embed)
+
+        # Generate arrows if pages are used
         arrows = ['\U000025C0', '\U000025B6']
-        for arrow in arrows:
-            await shop_msg.add_reaction(arrow)
+        if len(pages.keys()) > 1:
+            for arrow in arrows:
+                await shop_msg.add_reaction(arrow)
 
     @disc_cmds.command(name='timer')
     async def timer(self, ctx, duration : int, unit='sec', name='', *args):
@@ -69,7 +141,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         sec_duration = duration
         if unit in ['min', 'minute', 'minutes', 'm']:
             sec_duration = duration * 60
-        elif unit in ['hr', 'hour', 'hours' 'h']:
+        elif unit in ['hr', 'hour', 'hours', 'h']:
             sec_duration = duration * 3600
         elif unit in ['day', 'days', 'd']:
             sec_duration = duration * 86400
@@ -77,7 +149,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
             await ctx.send(content='Invalid time unit specified, please try again.')
             return None
 
-        padded_name = name + (' ' if name else '')
+        padded_name = '\"' + name + (' ' if name else '') + '\"'
         
         await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set for {duration} {unit}(s)', delete_after=sec_duration)
         await asyncio.sleep(sec_duration)

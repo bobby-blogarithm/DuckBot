@@ -1,7 +1,7 @@
 import os
 import csv
 
-from constants import ECON_FILE
+from .constants import ECON_FILE
 
 class Economy:
     _instance = None
