@@ -1,10 +1,12 @@
 import random
+
 import errors
+
 
 class Deck:
     def __init__(self):
         self.__ranks = [
-            'ace', '2', '3', '4', '5', '6', '7', '8', '9', 
+            'ace', '2', '3', '4', '5', '6', '7', '8', '9',
             '10', 'jack', 'queen', 'king'
         ]
         self.__suits = {'hearts', 'spades', 'clubs', 'diamonds'}
@@ -25,7 +27,7 @@ class Deck:
 
     def __bool__(self):
         return len(self) > 0
-    
+
     def __add__(self, other):
         if isinstance(other, Deck):
             return self.__cards + other.__cards
@@ -46,6 +48,7 @@ class Deck:
 
     def shuffle(self):
         self.__cards = random.sample(self.__cards, len(self))
+
 
 if __name__ == '__main__':
     deck = Deck()

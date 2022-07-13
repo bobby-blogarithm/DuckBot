@@ -1,19 +1,21 @@
 import asyncio
+from collections import defaultdict
+
 import discord
 import discord.ext.commands as disc_cmds
-from economy.errors import NotAnItemError
-import helpers.discord as discord_helpers
 
-from collections import defaultdict
-from economy import Economy, Shop, Inventory
+import helpers.discord as discord_helpers
 from duck_facts import DuckFact
+from economy import Economy, Shop, Inventory
+from economy.errors import NotAnItemError
+
 
 class CommandManager(disc_cmds.Cog, name='CommandManager'):
     def __init__(self, bot):
         self.bot = bot
 
     @disc_cmds.command(name='say')
-    async def say(self, ctx, server : discord.Guild, channel : discord.TextChannel, msg):
+    async def say(self, ctx, server: discord.Guild, channel: discord.TextChannel, msg):
         owner = await self.bot.is_owner(ctx.author)
         if owner:
             await discord_helpers.send_msg_to(server, channel, msg, None)
@@ -107,7 +109,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
                 await inv_msg.add_reaction(arrow)
 
     @disc_cmds.command(name='buy')
-    async def buy(self, ctx, quantity : int, item_name):
+    async def buy(self, ctx, quantity: int, item_name):
         # Get the member's inventory
         inv = Inventory(ctx.guild.name, ctx.author.name)
 
@@ -153,7 +155,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
                 await shop_msg.add_reaction(arrow)
 
     @disc_cmds.command(name='timer')
-    async def timer(self, ctx, duration : int, unit='sec', name='', *args):
+    async def timer(self, ctx, duration: int, unit='sec', name='', *args):
         if len(args) > 0:
             await ctx.send(content='Invalid number of arguments, please try again.')
             return None
@@ -170,8 +172,9 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
             return None
 
         padded_name = '\"' + name + (' ' if name else '') + '\"'
-        
-        await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set for {duration} {unit}(s)', delete_after=sec_duration)
+
+        await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set for {duration} {unit}(s)',
+                       delete_after=sec_duration)
         await asyncio.sleep(sec_duration)
         await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is up!', delete_after=300.0)
 
@@ -181,9 +184,8 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         pages = 4
         cur_page = 1
         message = await ctx.send(f"Page {cur_page}/{pages}:\n{contents[cur_page - 1]}")
+
         # getting the message object for editing and reacting
-
-
 
         def check(reaction, user):
             return user == ctx.author and str(reaction.emoji) in ["◀️", "▶️"]

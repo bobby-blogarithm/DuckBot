@@ -1,11 +1,13 @@
 import asyncio
-import helpers.time as time_helpers
-import helpers.discord as discord_helpers
 import datetime as dt
-import discord
 import random
 
+import discord
+
+import helpers.discord as discord_helpers
+import helpers.time as time_helpers
 from economy import Economy
+
 
 class DailyReminder:
     def __init__(self, bot):
@@ -19,7 +21,7 @@ class DailyReminder:
         self.remind_msg = 'Congratulations! You\'re the first message of the day.'
         self.remind_attach = 'images/vaporeon.png'
 
-    def set_reminder(self, capturer : discord.User, new_msg, new_attach):
+    def set_reminder(self, capturer: discord.User, new_msg, new_attach):
         if capturer == self.capturer:
             self.remind_msg = new_msg
             self.remind_attach = new_attach
@@ -51,7 +53,8 @@ class DailyReminder:
         # Get the last reminder this bot sent
         if not self.prev:
             # The last reminder sent by the bot is identified by the message content containing one of the reminder phrases
-            last_message_conds = lambda m: m.author == self.bot.user and any(phrase for phrase in self.reminder_phrases if phrase in m.content)
+            last_message_conds = lambda m: m.author == self.bot.user and any(
+                phrase for phrase in self.reminder_phrases if phrase in m.content)
 
             # Get the last reminder and the capturer of the reminder
             msg_history = msg_channel.history(after=earliest_prev_time, oldest_first=False)
@@ -86,7 +89,8 @@ class DailyReminder:
 
         # Apply one of the reminder phrases to the reminder message (append if there is an attachment, pre-append if not)
         curr_reminder_phrase = random.sample(self.reminder_phrases, 1)[0]
-        reminder_parts = [self.remind_msg, curr_reminder_phrase] if self.remind_attach else [curr_reminder_phrase, self.remind_msg]
+        reminder_parts = [self.remind_msg, curr_reminder_phrase] if self.remind_attach else [curr_reminder_phrase,
+                                                                                             self.remind_msg]
         full_reminder = ' '.join(reminder_parts)
 
         # Send the daily reminder if all these checks are passed and set the previous daily reminder to this one

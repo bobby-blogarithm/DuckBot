@@ -1,7 +1,8 @@
-import os
 import csv
+import os
 
 from .constants import ECON_FILE
+
 
 class Economy:
     _instance = None
@@ -37,7 +38,7 @@ class Economy:
     def load(self, fp):
         with open(fp, newline='') as f:
             csvreader = csv.reader(f)
-            next(csvreader) # Skip the header row
+            next(csvreader)  # Skip the header row
             return {row[0]: int(row[1]) for row in csvreader}
 
     def save(self):
@@ -48,12 +49,12 @@ class Economy:
 
         with open(self.econ_file, 'w', newline='') as f:
             csvwriter = csv.writer(f)
-            csvwriter.writerow(['Name', 'Score']) # Write header
+            csvwriter.writerow(['Name', 'Score'])  # Write header
             for name, score in self.scores.items():
                 csvwriter.writerow([name, score])
 
     def get_sorted_scores(self):
-        sorted_scores = sorted([(name, score) for name, score in self.scores.items()], key=lambda x:x[1], reverse=True)
+        sorted_scores = sorted([(name, score) for name, score in self.scores.items()], key=lambda x: x[1], reverse=True)
         for score in sorted_scores:
             yield score
 

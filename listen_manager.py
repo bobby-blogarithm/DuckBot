@@ -1,8 +1,10 @@
+from collections import defaultdict
+
 import discord.ext.commands as disc_cmds
 
-from collections import defaultdict
 from daily_reminder import DailyReminder
 from economy import Shop, Inventory, Economy
+
 
 class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
     def __init__(self, bot):
@@ -100,7 +102,7 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
         # Check if this is on an inventory message
         if 'Inventory' not in inv_embed.title:
             return None
-        
+
         # Remove the reaction
         await inv_msg.remove_reaction(reaction.emoji, reaction.member)
 
@@ -145,7 +147,7 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
         # Check if this is on a shop message
         if 'Shop' not in shop_embed.title:
             return None
-        
+
         # Remove the reaction
         await shop_msg.remove_reaction(reaction.emoji, reaction.member)
 
