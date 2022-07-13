@@ -21,12 +21,25 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
             print('You are not the owner')
 
     @disc_cmds.command(name='leaderboard')
-    async def reminder_leaderboard(self, ctx, limit: int = 10):
-        # TODO Implement pagination
+    async def reminder_leaderboard(self, ctx):
         # Get the rankings from the reminder leaderboard
         economy = Economy.get_instance(ctx.guild.name)
-        rankings = [rank for rank in economy.get_rankings(limit)]
+        rankings = [rank for rank in economy.get_rankings()]
+        pagination = False
+        # If there are more than 10 entries, we display only the first 10 and turn on the pagination
+        if len(rankings) > 10:
+            pagination = True
 
+        # Generate pagination for leaderboard
+        pages = defaultdict(list)
+        for i, item in enumerate(rankings):
+            page_num = (i // 10)
+            pages[page_num].append(item)
+
+        # Placeholder message
+        lb_msg = await ctx.send(content=f'Loading {ctx.guild.name} Economy Rankings...')
+
+        rankings = rankings[0:10]
         # Create the leaderboard message and send
         name_string = '\n'.join([rank[1] for rank in rankings])
         point_string = '\n'.join([str(rank[2]) for rank in rankings])
@@ -37,7 +50,14 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         leaderboard_embed.add_field(name='Rank', value=rank_string if rank_string else 'N/A')
         leaderboard_embed.add_field(name='Names', value=name_string if name_string else 'N/A')
         leaderboard_embed.add_field(name='Points', value=point_string if point_string else 'N/A')
-        await ctx.send(embed=leaderboard_embed)
+        if pagination:
+            leaderboard_embed.set_footer(text=f'Page 1 / {len(pages)}')
+        await lb_msg.edit(content='', embed=leaderboard_embed)
+
+        # If there are more than 10 entries in the ranking, add pagination
+        if pagination:
+            await lb_msg.add_reaction('◀')
+            await lb_msg.add_reaction('▶')
 
     @disc_cmds.command(name='duckfact')
     async def duck_fact(self, ctx, *args):
@@ -154,6 +174,45 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set for {duration} {unit}(s)', delete_after=sec_duration)
         await asyncio.sleep(sec_duration)
         await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is up!', delete_after=300.0)
+
+    @disc_cmds.command(name='test')
+    async def pages(self, ctx):
+        contents = ["This is page 1!", "This is page 2!", "This is page 3!", "This is page 4!"]
+        pages = 4
+        cur_page = 1
+        message = await ctx.send(f"Page {cur_page}/{pages}:\n{contents[cur_page - 1]}")
+        # getting the message object for editing and reacting
+
+
+
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in ["◀️", "▶️"]
+            # This makes sure nobody except the command sender can interact with the "menu"
+
+        while True:
+            try:
+                reaction, user = await self.bot.wait_for("reaction_add", timeout=60, check=check)
+                # waiting for a reaction to be added - times out after x seconds, 60 in this
+                # example
+
+                if str(reaction.emoji) == "▶️" and cur_page != pages:
+                    cur_page += 1
+                    await message.edit(content=f"Page {cur_page}/{pages}:\n{contents[cur_page - 1]}")
+                    await message.remove_reaction(reaction, user)
+
+                elif str(reaction.emoji) == "◀️" and cur_page > 1:
+                    cur_page -= 1
+                    await message.edit(content=f"Page {cur_page}/{pages}:\n{contents[cur_page - 1]}")
+                    await message.remove_reaction(reaction, user)
+
+                else:
+                    await message.remove_reaction(reaction, user)
+                    # removes reactions if the user tries to go forward on the last page or
+                    # backwards on the first page
+            except asyncio.TimeoutError:
+                await message.delete()
+                break
+                # ending the loop if user doesn't react after x seconds
 
     # TODO This command should be used for the bot to update itself
     # ! DEPRECATED for now

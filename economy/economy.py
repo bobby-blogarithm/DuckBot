@@ -57,16 +57,12 @@ class Economy:
         for score in sorted_scores:
             yield score
 
-    def get_rankings(self, limit : int = 10):
+    def get_rankings(self):
         # Get the actual rank numbers for the users up to the given limit
         rank = 1
         num_tied = 0
         prev_score = None
         for i, score in enumerate(self.get_sorted_scores()):
-            # Stop returning values if we have reached our limit
-            if i == limit:
-                break
-
             # Only increment the rank when the next ranked is actually lower and not tied
             if prev_score and score[1] < prev_score:
                 rank += 1 + num_tied
