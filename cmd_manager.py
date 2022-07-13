@@ -67,7 +67,12 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
             await ctx.send(content='Invalid number of arguments, please try again.')
             return None
         duck = DuckFact()
-        image = duck.get_image()
+        # If an Unsplash access key is defined, get a random image from there
+        # Otherwise use locally defined URLs
+        if not self.bot.unsplash_access:
+            image = duck.get_image().strip()
+        else:
+            image = await duck.get_image_unsplash(self.bot.unsplash_access)
         fact, fact_num = duck.get_fact()
 
         fact_embed = discord.Embed()

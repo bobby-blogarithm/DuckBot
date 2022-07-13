@@ -17,6 +17,10 @@ class DuckBot(disc_cmds.Bot):
         self.token = self.config['token']
         self.remind_server = self.config['reminder-server']
         self.remind_channel = self.config['reminder-channel']
+        if 'unsplash-access' in self.config:
+            self.unsplash_access = self.config['unsplash-access']
+        else:
+            self.unsplash_access = None
 
         # Attach cogs to bot
         self.add_cog(CommandManager(self))
