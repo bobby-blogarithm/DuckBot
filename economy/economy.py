@@ -65,7 +65,7 @@ class Economy:
         for i, score in enumerate(self.get_sorted_scores()):
             # Stop returning values if we have reached our limit
             if i == limit:
-                raise StopIteration
+                break
 
             # Only increment the rank when the next ranked is actually lower and not tied
             if prev_score and score[1] < prev_score:
