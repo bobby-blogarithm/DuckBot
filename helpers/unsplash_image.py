@@ -10,7 +10,7 @@ async def get_random_image(client_key, query, orientation):
     async with session.get('https://api.unsplash.com/photos/random', params=params) as resp:
         # Check if the response code is OK
         if resp.status != 200:
-            print(f'Issue encountered while requesting picture. Response code {resp.status}')
+            print(f'Error encountered while requesting picture. Response code {resp.status}')
             return None
 
         # Read the JSON response and obtain the source image

@@ -1,6 +1,7 @@
 import asyncio
 import datetime as dt
 import random
+import glob
 
 import discord
 
@@ -19,7 +20,9 @@ class DailyReminder:
         self.capturer = None
         self.reminder_phrases = ['Have a reminder!', 'Don\'t forget!']
         self.remind_msg = 'Congratulations! You\'re the first message of the day.'
-        self.remind_attach = 'images/vaporeon.png'
+        # List all images in /images directory as possible attachments
+        # Matches extension *g  (png, jpg, etc)
+        self.remind_attach = glob.glob('images/*.*g')
 
     def set_reminder(self, capturer: discord.User, new_msg, new_attach):
         if capturer == self.capturer:
@@ -78,7 +81,7 @@ class DailyReminder:
             if self.cd and (send_time - self.cd) < last_message_time:
                 return None
 
-            # Last reminder was not sent today (or later) 
+            # Last reminder was not sent today (or later)
             if last_message_time.date() >= send_time.date() or send_time.hour < 6:
                 return None
 
@@ -89,12 +92,13 @@ class DailyReminder:
 
         # Apply one of the reminder phrases to the reminder message (append if there is an attachment, pre-append if not)
         curr_reminder_phrase = random.sample(self.reminder_phrases, 1)[0]
-        reminder_parts = [self.remind_msg, curr_reminder_phrase] if self.remind_attach else [curr_reminder_phrase,
+        curr_remind_attach = random.sample(self.remind_attach, 1)[0]
+        reminder_parts = [self.remind_msg, curr_reminder_phrase] if curr_remind_attach else [curr_reminder_phrase,
                                                                                              self.remind_msg]
         full_reminder = ' '.join(reminder_parts)
 
         # Send the daily reminder if all these checks are passed and set the previous daily reminder to this one
-        self.prev = await discord_helpers.send_msg_to(msg_server, msg_channel, full_reminder, self.remind_attach)
+        self.prev = await discord_helpers.send_msg_to(msg_server, msg_channel, full_reminder, curr_remind_attach)
         self.capturer = msg_user
 
         # Add points to the user that triggered this then save it
