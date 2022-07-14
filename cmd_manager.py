@@ -1,19 +1,21 @@
 import asyncio
+from collections import defaultdict
+
 import discord
 import discord.ext.commands as disc_cmds
-from economy.errors import NotAnItemError
-import helpers.discord as discord_helpers
 
-from collections import defaultdict
-from economy import Economy, Shop, Inventory
+import helpers.discord as discord_helpers
 from duck_facts import DuckFact
+from economy import Economy, Shop, Inventory
+from economy.errors import NotAnItemError
+
 
 class CommandManager(disc_cmds.Cog, name='CommandManager'):
     def __init__(self, bot):
         self.bot = bot
 
     @disc_cmds.command(name='say')
-    async def say(self, ctx, server : discord.Guild, channel : discord.TextChannel, msg):
+    async def say(self, ctx, server: discord.Guild, channel: discord.TextChannel, msg):
         owner = await self.bot.is_owner(ctx.author)
         if owner:
             await discord_helpers.send_msg_to(server, channel, msg, None)
@@ -21,12 +23,25 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
             print('You are not the owner')
 
     @disc_cmds.command(name='leaderboard')
-    async def reminder_leaderboard(self, ctx, limit: int = 10):
-        # TODO Implement pagination
+    async def reminder_leaderboard(self, ctx):
         # Get the rankings from the reminder leaderboard
         economy = Economy.get_instance(ctx.guild.name)
-        rankings = [rank for rank in economy.get_rankings(limit)]
+        rankings = [rank for rank in economy.get_rankings()]
+        pagination = False
+        # If there are more than 10 entries, we display only the first 10 and turn on the pagination
+        if len(rankings) > 10:
+            pagination = True
 
+        # Generate pagination for leaderboard
+        pages = defaultdict(list)
+        for i, item in enumerate(rankings):
+            page_num = (i // 10)
+            pages[page_num].append(item)
+
+        # Placeholder message
+        lb_msg = await ctx.send(content=f'Loading {ctx.guild.name} Economy Rankings...')
+
+        rankings = rankings[0:10]
         # Create the leaderboard message and send
         name_string = '\n'.join([rank[1] for rank in rankings])
         point_string = '\n'.join([str(rank[2]) for rank in rankings])
@@ -37,7 +52,14 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         leaderboard_embed.add_field(name='Rank', value=rank_string if rank_string else 'N/A')
         leaderboard_embed.add_field(name='Names', value=name_string if name_string else 'N/A')
         leaderboard_embed.add_field(name='Points', value=point_string if point_string else 'N/A')
-        await ctx.send(embed=leaderboard_embed)
+        if pagination:
+            leaderboard_embed.set_footer(text=f'Page 1 / {len(pages)}')
+        await lb_msg.edit(content='', embed=leaderboard_embed)
+
+        # If there are more than 10 entries in the ranking, add pagination
+        if pagination:
+            await lb_msg.add_reaction('◀')
+            await lb_msg.add_reaction('▶')
 
     @disc_cmds.command(name='duckfact')
     async def duck_fact(self, ctx, *args):
@@ -45,7 +67,12 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
             await ctx.send(content='Invalid number of arguments, please try again.')
             return None
         duck = DuckFact()
-        image = duck.get_image()
+        # If an Unsplash access key is defined, get a random image from there
+        # Otherwise use locally defined URLs
+        if not self.bot.unsplash_access:
+            image = duck.get_image().strip()
+        else:
+            image = await duck.get_image_unsplash(self.bot.unsplash_access)
         fact, fact_num = duck.get_fact()
 
         fact_embed = discord.Embed()
@@ -87,7 +114,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
                 await inv_msg.add_reaction(arrow)
 
     @disc_cmds.command(name='buy')
-    async def buy(self, ctx, quantity : int, item_name):
+    async def buy(self, ctx, quantity: int, item_name):
         # Get the member's inventory
         inv = Inventory(ctx.guild.name, ctx.author.name)
 
@@ -133,7 +160,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
                 await shop_msg.add_reaction(arrow)
 
     @disc_cmds.command(name='timer')
-    async def timer(self, ctx, duration : int, unit='sec', name='', *args):
+    async def timer(self, ctx, duration: int, unit='sec', name='', *args):
         if len(args) > 0:
             await ctx.send(content='Invalid number of arguments, please try again.')
             return None
@@ -150,8 +177,9 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
             return None
 
         padded_name = '\"' + name + (' ' if name else '') + '\"'
-        
-        await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set for {duration} {unit}(s)', delete_after=sec_duration)
+
+        await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set for {duration} {unit}(s)',
+                       delete_after=sec_duration)
         await asyncio.sleep(sec_duration)
         await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is up!', delete_after=300.0)
 

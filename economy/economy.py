@@ -1,7 +1,8 @@
-import os
 import csv
+import os
 
 from .constants import ECON_FILE
+
 
 class Economy:
     _instance = None
@@ -37,7 +38,7 @@ class Economy:
     def load(self, fp):
         with open(fp, newline='') as f:
             csvreader = csv.reader(f)
-            next(csvreader) # Skip the header row
+            next(csvreader)  # Skip the header row
             return {row[0]: int(row[1]) for row in csvreader}
 
     def save(self):
@@ -48,25 +49,21 @@ class Economy:
 
         with open(self.econ_file, 'w', newline='') as f:
             csvwriter = csv.writer(f)
-            csvwriter.writerow(['Name', 'Score']) # Write header
+            csvwriter.writerow(['Name', 'Score'])  # Write header
             for name, score in self.scores.items():
                 csvwriter.writerow([name, score])
 
     def get_sorted_scores(self):
-        sorted_scores = sorted([(name, score) for name, score in self.scores.items()], key=lambda x:x[1], reverse=True)
+        sorted_scores = sorted([(name, score) for name, score in self.scores.items()], key=lambda x: x[1], reverse=True)
         for score in sorted_scores:
             yield score
 
-    def get_rankings(self, limit : int = 10):
+    def get_rankings(self):
         # Get the actual rank numbers for the users up to the given limit
         rank = 1
         num_tied = 0
         prev_score = None
         for i, score in enumerate(self.get_sorted_scores()):
-            # Stop returning values if we have reached our limit
-            if i == limit:
-                raise StopIteration
-
             # Only increment the rank when the next ranked is actually lower and not tied
             if prev_score and score[1] < prev_score:
                 rank += 1 + num_tied

@@ -1,8 +1,9 @@
 import random
-import errors
-
 from abc import ABC, abstractmethod
+
+import errors
 from .deck import Deck
+
 
 class CardGame(ABC):
     def __init__(self, max_players):
@@ -29,6 +30,7 @@ class CardGame(ABC):
             self.players.remove(player)
         else:
             raise ValueError('Player not in game')
+
 
 class CardGamePlayer:
     def __init__(self, name):
