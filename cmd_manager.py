@@ -42,8 +42,11 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         lb_msg = await ctx.send(content=f'Loading {ctx.guild.name} Economy Rankings...')
 
         rankings = rankings[0:10]
+        # Get username from userid
+        usernames = await ctx.guild.query_members(user_ids=[rank[1] for rank in rankings], limit=100)
+        usernames = [user.name for user in usernames]
         # Create the leaderboard message and send
-        name_string = '\n'.join([rank[1] for rank in rankings])
+        name_string = '\n'.join(usernames)
         point_string = '\n'.join([str(rank[2]) for rank in rankings])
         rank_string = '\n'.join([str(rank[0]) for rank in rankings])
 

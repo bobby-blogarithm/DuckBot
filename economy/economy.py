@@ -23,23 +23,23 @@ class Economy:
     def update(self, name, score):
         self.scores[name] = score
 
-    def add(self, name, score):
-        if name not in self.scores.keys():
-            self.scores[name] = score
+    def add(self, uid: int, score: int):
+        if uid not in self.scores.keys():
+            self.scores[uid] = score
         else:
-            self.scores[name] += score
+            self.scores[uid] += score
 
-    def remove(self, name, score):
-        if name not in self.scores.keys():
+    def remove(self, uid: int, score: int):
+        if uid not in self.scores.keys():
             print('Cannot remove score from a user with no score')
             return None
-        self.scores[name] -= score
+        self.scores[uid] -= score
 
     def load(self, fp):
         with open(fp, newline='') as f:
             csvreader = csv.reader(f)
             next(csvreader)  # Skip the header row
-            return {row[0]: int(row[1]) for row in csvreader}
+            return {int(row[0]): int(row[1]) for row in csvreader}
 
     def save(self):
         # Generate the necessary file structure if it does not exist

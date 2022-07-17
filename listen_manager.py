@@ -36,6 +36,11 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
         economy = Economy.get_instance(lb_server.name)
         rankings = [rank for rank in economy.get_rankings()]
 
+        # Since the scores are stored with userid, we translate them to usernames for presentation
+        usernames = await lb_server.query_members(user_ids=[rank[1] for rank in rankings], limit=100)
+        for rank, user in zip(rankings, usernames):
+            rank[1] = user
+
         # Generate pagination for leaderboard
         pages = defaultdict(list)
         for i, item in enumerate(rankings):
