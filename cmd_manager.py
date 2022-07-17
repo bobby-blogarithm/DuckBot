@@ -1,5 +1,7 @@
 import asyncio
 from collections import defaultdict
+import parsedatetime
+from datetime import datetime
 
 import discord
 import discord.ext.commands as disc_cmds
@@ -163,25 +165,79 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
                 await shop_msg.add_reaction(arrow)
 
     @disc_cmds.command(name='timer')
-    async def timer(self, ctx, duration: int, unit='sec', name='', *args):
-        if len(args) > 0:
-            await ctx.send(content='Invalid number of arguments, please try again.')
+    async def timer(self, ctx, *args):
+        # sec_duration = duration
+        # if unit in ['min', 'minute', 'minutes', 'm']:
+        #     sec_duration = duration * 60
+        # elif unit in ['hr', 'hour', 'hours', 'h']:
+        #     sec_duration = duration * 3600
+        # elif unit in ['day', 'days', 'd']:
+        #     sec_duration = duration * 86400
+        # elif unit not in ['sec', 'second', 'seconds', 's']:
+        #     await ctx.send(content='Invalid time unit specified, please try again.')
+        #     return None
+
+        message = ' '.join(args)
+
+        # Create a Calendar instance for time parsing
+        cal = parsedatetime.Calendar()
+
+        # Parse the message and obtain time delta
+        curr_time = datetime.now()
+        # res format: (datetime, result_code, start_idx, end_idx, matched_string)
+        res = cal.nlp(message)
+
+        # If the nlp returned None type, the parser failed to parse the time
+        if not res:
+            await ctx.send(content='Failed to parse time duration. Please try again.')
             return None
 
-        sec_duration = duration
-        if unit in ['min', 'minute', 'minutes', 'm']:
-            sec_duration = duration * 60
-        elif unit in ['hr', 'hour', 'hours', 'h']:
-            sec_duration = duration * 3600
-        elif unit in ['day', 'days', 'd']:
-            sec_duration = duration * 86400
-        elif unit not in ['sec', 'second', 'seconds', 's']:
-            await ctx.send(content='Invalid time unit specified, please try again.')
-            return None
+        res = res[0]
+        time_diff = res[0] - curr_time
+        # Offset the lost second due to processing
+        sec_duration = time_diff.total_seconds() + 1
 
-        padded_name = '\"' + name + (' ' if name else '') + '\"'
+        # Obtain the reminder content
+        timer_name = ''.join(message[i] for i in range(len(message)) if i < res[2] or i >= res[3]).strip()
+        if timer_name:
+            padded_name = '\"' + timer_name + '\" '
+        else:
+            padded_name = ''
 
-        await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set for {duration} {unit}(s)',
+        days, remainder = divmod(sec_duration, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        time_string = []
+
+        if days > 1:
+            time_string.append(f'{int(days)} days')
+        elif days == 1:
+            time_string.append('1 day')
+        if hours > 1:
+            time_string.append(f', {int(hours)} hours')
+        elif hours == 1:
+            time_string.append(', 1 hour')
+        if minutes > 1:
+            time_string.append(f', {int(minutes)} minutes')
+        elif minutes == 1:
+            time_string.append(', 1 minute')
+        if seconds > 1:
+            time_string.append(f', {int(seconds)} seconds')
+        elif seconds == 1:
+            time_string.append(', 1 second')
+
+        # Remove the extraneous comma if any
+        if time_string[0][0] == ',':
+            time_string[0] = time_string[0][2:]
+
+        # Insert an "and" for readability if the time string is long
+        if len(time_string) > 2:
+            time_string[-1] = ', and' + time_string[-1][1:]
+
+        time_string = ''.join(time_string)
+
+        await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set to expire in {time_string}',
                        delete_after=sec_duration)
         await asyncio.sleep(sec_duration)
         await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is up!', delete_after=300.0)
