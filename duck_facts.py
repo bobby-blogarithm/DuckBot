@@ -1,4 +1,5 @@
 import random
+
 from helpers.unsplash_image import get_random_image
 
 DUCK_IMAGES_FILE = 'duck-facts/image_links.txt'

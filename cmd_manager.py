@@ -1,10 +1,10 @@
 import asyncio
 from collections import defaultdict
-import parsedatetime
 from datetime import datetime
 
 import discord
 import discord.ext.commands as disc_cmds
+import parsedatetime
 
 import helpers.discord as discord_helpers
 from duck_facts import DuckFact
@@ -166,17 +166,6 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
 
     @disc_cmds.command(name='timer')
     async def timer(self, ctx, *args):
-        # sec_duration = duration
-        # if unit in ['min', 'minute', 'minutes', 'm']:
-        #     sec_duration = duration * 60
-        # elif unit in ['hr', 'hour', 'hours', 'h']:
-        #     sec_duration = duration * 3600
-        # elif unit in ['day', 'days', 'd']:
-        #     sec_duration = duration * 86400
-        # elif unit not in ['sec', 'second', 'seconds', 's']:
-        #     await ctx.send(content='Invalid time unit specified, please try again.')
-        #     return None
-
         message = ' '.join(args)
 
         # Create a Calendar instance for time parsing
@@ -204,6 +193,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         else:
             padded_name = ''
 
+        # Format the output time string
         days, remainder = divmod(sec_duration, 86400)
         hours, remainder = divmod(remainder, 3600)
         minutes, seconds = divmod(remainder, 60)
