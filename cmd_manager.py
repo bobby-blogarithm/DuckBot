@@ -1,6 +1,7 @@
 import asyncio
 from collections import defaultdict
 from datetime import datetime
+from math import floor
 
 import discord
 import discord.ext.commands as disc_cmds
@@ -183,8 +184,14 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
 
         res = res[0]
         time_diff = res[0] - curr_time
-        # Offset the lost second due to processing
-        sec_duration = time_diff.total_seconds() + 1
+
+        # If the timediff is negative, return an error
+        if time_diff.total_seconds() < 0:
+            await ctx.send(content='The time specified had already expired in the past. Please try again.')
+            return None
+
+        # Offset the lost second due to processing (for display only)
+        sec_duration = int(floor(time_diff.total_seconds() + 1))
 
         # Obtain the reminder content
         timer_name = ''.join(message[i] for i in range(len(message)) if i < res[2] or i >= res[3]).strip()
@@ -198,38 +205,24 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         hours, remainder = divmod(remainder, 3600)
         minutes, seconds = divmod(remainder, 60)
 
-        time_string = []
+        time_str = [(days, 'day'), (hours, 'hour'), (minutes, 'minute'), (seconds, 'second')]
 
-        if days > 1:
-            time_string.append(f'{int(days)} days')
-        elif days == 1:
-            time_string.append('1 day')
-        if hours > 1:
-            time_string.append(f', {int(hours)} hours')
-        elif hours == 1:
-            time_string.append(', 1 hour')
-        if minutes > 1:
-            time_string.append(f', {int(minutes)} minutes')
-        elif minutes == 1:
-            time_string.append(', 1 minute')
-        if seconds > 1:
-            time_string.append(f', {int(seconds)} seconds')
-        elif seconds == 1:
-            time_string.append(', 1 second')
+        # Function to handle converting the time unit into the correct string equivalent
+        ftime = lambda x, unit: f'{int(x)} {unit}{"s" if x > 1 else ""}'
 
-        # Remove the extraneous comma if any
-        if time_string[0][0] == ',':
-            time_string[0] = time_string[0][2:]
+        # Only put in the time units that are more than 0 in our final formatted string
+        time_str = [ftime(*t) for t in time_str if t[0] > 0]
 
-        # Insert an "and" for readability if the time string is long
-        if len(time_string) > 2:
-            time_string[-1] = ', and' + time_string[-1][1:]
+        # Add 'and' if the final time has more than 2 time units
+        time_str[-1] = f'and {time_str[-1]}' if len(time_str) > 2 else time_str[-1]
 
-        time_string = ''.join(time_string)
+        # Join string together
+        time_str = ', '.join(time_str)
 
-        await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set to expire in {time_string}',
+        await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set to expire in {time_str}',
                        delete_after=sec_duration)
-        await asyncio.sleep(sec_duration)
+        # Here we use actual timediff here to make our timer as accurate as possible
+        await asyncio.sleep(time_diff.total_seconds())
         await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is up!', delete_after=300.0)
 
     # TODO This command should be used for the bot to update itself
