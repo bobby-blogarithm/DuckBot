@@ -1,8 +1,11 @@
 import asyncio
 from collections import defaultdict
+from datetime import datetime
+from math import floor
 
 import discord
 import discord.ext.commands as disc_cmds
+import parsedatetime
 
 import helpers.discord as discord_helpers
 from duck_facts import DuckFact
@@ -42,15 +45,18 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         lb_msg = await ctx.send(content=f'Loading {ctx.guild.name} Economy Rankings...')
 
         rankings = rankings[0:10]
+        # Get username from userid
+        usernames = await ctx.guild.query_members(user_ids=[rank[1] for rank in rankings], limit=100)
+        usernames = [user.name for user in usernames]
         # Create the leaderboard message and send
-        name_string = '\n'.join([rank[1] for rank in rankings])
+        name_string = '\n'.join(usernames)
         point_string = '\n'.join([str(rank[2]) for rank in rankings])
         rank_string = '\n'.join([str(rank[0]) for rank in rankings])
 
         leaderboard_embed = discord.Embed()
         leaderboard_embed.title = f'Economy Rankings for {ctx.guild.name}'
         leaderboard_embed.add_field(name='Rank', value=rank_string if rank_string else 'N/A')
-        leaderboard_embed.add_field(name='Names', value=name_string if name_string else 'N/A')
+        leaderboard_embed.add_field(name='Name', value=name_string if name_string else 'N/A')
         leaderboard_embed.add_field(name='Points', value=point_string if point_string else 'N/A')
         if pagination:
             leaderboard_embed.set_footer(text=f'Page 1 / {len(pages)}')
@@ -160,27 +166,63 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
                 await shop_msg.add_reaction(arrow)
 
     @disc_cmds.command(name='timer')
-    async def timer(self, ctx, duration: int, unit='sec', name='', *args):
-        if len(args) > 0:
-            await ctx.send(content='Invalid number of arguments, please try again.')
+    async def timer(self, ctx, *args):
+        message = ' '.join(args)
+
+        # Create a Calendar instance for time parsing
+        cal = parsedatetime.Calendar()
+
+        # Parse the message and obtain time delta
+        curr_time = datetime.now()
+        # res format: (datetime, result_code, start_idx, end_idx, matched_string)
+        res = cal.nlp(message)
+
+        # If the nlp returned None type, the parser failed to parse the time
+        if not res:
+            await ctx.send(content='Failed to parse time duration. Please try again.')
             return None
 
-        sec_duration = duration
-        if unit in ['min', 'minute', 'minutes', 'm']:
-            sec_duration = duration * 60
-        elif unit in ['hr', 'hour', 'hours', 'h']:
-            sec_duration = duration * 3600
-        elif unit in ['day', 'days', 'd']:
-            sec_duration = duration * 86400
-        elif unit not in ['sec', 'second', 'seconds', 's']:
-            await ctx.send(content='Invalid time unit specified, please try again.')
+        res = res[0]
+        time_diff = res[0] - curr_time
+
+        # If the timediff is negative, return an error
+        if time_diff.total_seconds() < 0:
+            await ctx.send(content='The time specified had already expired in the past. Please try again.')
             return None
 
-        padded_name = '\"' + name + (' ' if name else '') + '\"'
+        # Offset the lost second due to processing (for display only)
+        sec_duration = int(floor(time_diff.total_seconds() + 1))
 
-        await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set for {duration} {unit}(s)',
+        # Obtain the reminder content
+        timer_name = ''.join(message[i] for i in range(len(message)) if i < res[2] or i >= res[3]).strip()
+        if timer_name:
+            padded_name = '\"' + timer_name + '\" '
+        else:
+            padded_name = ''
+
+        # Format the output time string
+        days, remainder = divmod(sec_duration, 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        time_str = [(days, 'day'), (hours, 'hour'), (minutes, 'minute'), (seconds, 'second')]
+
+        # Function to handle converting the time unit into the correct string equivalent
+        ftime = lambda x, unit: f'{int(x)} {unit}{"s" if x > 1 else ""}'
+
+        # Only put in the time units that are more than 0 in our final formatted string
+        time_str = [ftime(*t) for t in time_str if t[0] > 0]
+
+        # Add 'and' if the final time has more than 2 time units
+        time_str[-1] = f'and {time_str[-1]}' if len(time_str) > 2 else time_str[-1]
+
+        # Join string together
+        time_str = ', '.join(time_str)
+
+        await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is set to expire in {time_str}',
                        delete_after=sec_duration)
-        await asyncio.sleep(sec_duration)
+        # Here we use actual timediff here to make our timer as accurate as possible
+        await asyncio.sleep(time_diff.total_seconds())
         await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is up!', delete_after=300.0)
 
     # TODO This command should be used for the bot to update itself

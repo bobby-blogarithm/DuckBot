@@ -1,7 +1,7 @@
 import asyncio
 import datetime as dt
-import random
 import glob
+import random
 
 import discord
 
@@ -102,7 +102,7 @@ class DailyReminder:
         self.capturer = msg_user
 
         # Add points to the user that triggered this then save it
-        self.econ.add(msg_user.name, 10)
+        self.econ.add(msg_user.id, 10)
         self.econ.save()
 
         # Set the cooldown for the daily reminder until tomorrow at 6 am
