@@ -56,7 +56,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         leaderboard_embed = discord.Embed()
         leaderboard_embed.title = f'Economy Rankings for {ctx.guild.name}'
         leaderboard_embed.add_field(name='Rank', value=rank_string if rank_string else 'N/A')
-        leaderboard_embed.add_field(name='Names', value=name_string if name_string else 'N/A')
+        leaderboard_embed.add_field(name='Name', value=name_string if name_string else 'N/A')
         leaderboard_embed.add_field(name='Points', value=point_string if point_string else 'N/A')
         if pagination:
             leaderboard_embed.set_footer(text=f'Page 1 / {len(pages)}')
