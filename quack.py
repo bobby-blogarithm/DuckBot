@@ -52,11 +52,12 @@ def generate_duck():
 
     return honkGahQuack
 
-async def on_message(self, message):
+async def on_message(message):
         if message.author.id == 328965253314379778 and not message.author.is_on_mobile():
             pcheck = False
             ccheck = False
-            for i in message:
+            print(message.content)
+            for i in message.content:
                 if i in string.punctuation:
                     pcheck = True
                 if i.isupper():
