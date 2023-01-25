@@ -53,15 +53,14 @@ def generate_duck():
     return honkGahQuack
 
 async def on_message(message):
-        if message.author.id == 328965253314379778 and not message.author.is_on_mobile():
-            pcheck = False
+        if message.author.id == 328965253314379778 and not message.author.is_on_mobile() and message.channel.name == 'argle-bargle':
+            pcheck = 0
             ccheck = False
-            print(message.content)
             for i in message.content:
                 if i in string.punctuation:
-                    pcheck = True
+                    pcheck += 1
                 if i.isupper():
                     ccheck = True
-            if ccheck and pcheck:
+            if ccheck and pcheck > 2:
                 say = generate_duck()
                 await message.reply(say, mention_author=False)
