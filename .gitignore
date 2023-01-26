@@ -7,4 +7,4 @@ images/
 .vscode/
 __pycache__/
 data/
-duckbot/
+venv/
