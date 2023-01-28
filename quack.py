@@ -63,4 +63,4 @@ async def on_message(message):
                     ccheck = True
             if ccheck and pcheck > 2:
                 say = generate_duck()
-                await message.reply(say, mention_author=False)
+                #await message.reply(say, mention_author=False)

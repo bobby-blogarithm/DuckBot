@@ -1,2 +1,0 @@
-class NotAnItemError(Exception):
-    pass
