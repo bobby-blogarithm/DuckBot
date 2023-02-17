@@ -108,3 +108,9 @@ class DailyReminder:
         # Set the cooldown for the daily reminder until tomorrow at 6 am
         tomorrow_time = send_time + dt.timedelta(days=1)
         self.cd = tomorrow_time.replace(hour=6, minute=0, second=0, microsecond=0) - send_time
+
+
+        # if time > 6 am (epoch time) and not triggered, then trigger and update tracker to triggered for the day (store epoch time for 6am that day)
+        # else don't trigger
+        # if time >12am and <6am and not triggered then triggered and update tracker to triggered for the day
+        # else don't trigger

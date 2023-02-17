@@ -1,7 +1,7 @@
 import asyncio
-from collections import defaultdict
 from datetime import datetime
 from math import floor
+import random
 
 import discord
 import discord.ext.commands as disc_cmds
@@ -10,7 +10,6 @@ import parsedatetime
 import helpers.discord as discord_helpers
 from duck_facts import DuckFact
 from quack import generate_duck
-from economy import Economy
 
 
 class CommandManager(disc_cmds.Cog, name='CommandManager'):
@@ -31,45 +30,7 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
 
     @disc_cmds.command(name='leaderboard')
     async def reminder_leaderboard(self, ctx):
-        # Get the rankings from the reminder leaderboard
-        economy = Economy.get_instance(ctx.guild.name)
-        rankings = [rank for rank in economy.get_rankings()]
-        pagination = False
-        # If there are more than 10 entries, we display only the first 10 and turn on the pagination
-        if len(rankings) > 10:
-            pagination = True
-
-        # Generate pagination for leaderboard
-        pages = defaultdict(list)
-        for i, item in enumerate(rankings):
-            page_num = (i // 10)
-            pages[page_num].append(item)
-
-        # Placeholder message
-        lb_msg = await ctx.send(content=f'Loading {ctx.guild.name} Economy Rankings...')
-
-        rankings = rankings[0:10]
-        # Get username from userid
-        usernames = await ctx.guild.query_members(user_ids=[rank[1] for rank in rankings], limit=100)
-        usernames = [user.name for user in usernames]
-        # Create the leaderboard message and send
-        name_string = '\n'.join(usernames)
-        point_string = '\n'.join([str(rank[2]) for rank in rankings])
-        rank_string = '\n'.join([str(rank[0]) for rank in rankings])
-
-        leaderboard_embed = discord.Embed()
-        leaderboard_embed.title = f'Economy Rankings for {ctx.guild.name}'
-        leaderboard_embed.add_field(name='Rank', value=rank_string if rank_string else 'N/A')
-        leaderboard_embed.add_field(name='Name', value=name_string if name_string else 'N/A')
-        leaderboard_embed.add_field(name='Points', value=point_string if point_string else 'N/A')
-        if pagination:
-            leaderboard_embed.set_footer(text=f'Page 1 / {len(pages)}')
-        await lb_msg.edit(content='', embed=leaderboard_embed)
-
-        # If there are more than 10 entries in the ranking, add pagination
-        if pagination:
-            await lb_msg.add_reaction('◀')
-            await lb_msg.add_reaction('▶')
+        await ctx.send("Leaderboard is under maintenance! Please check back later <:duck_up:1071706220043452518>")
 
 
 
@@ -104,6 +65,69 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         duck_say = generate_duck()
 
         await ctx.send(duck_say)
+
+
+
+    @disc_cmds.command(name='r')
+    async def roll_ow(self, ctx, *args):
+        if len(args) > 1:
+            await ctx.send(content='Invalid number of arguments, please try again.')
+            return None
+        dps_characters = ['Ashe','Bastion','Sojurn','Echo','Genji','Hanzo','Junkrat','McCree','Mei','Pharah','Reaper','Soldier: 76','Sombra','Symmetra', 'Torbjörn','Tracer','Widowmaker']
+        tank_characters = ['D.Va','Orisa','Reinhardt','Roadhog','Sigma','Winston','Wrecking Ball','Zarya','Doomfist','Junker Queen','Ramattra']
+        support_characters = ['Ana','Baptiste','Lúcio','Mercy','Moira','Brigitte','Zenyatta','Kiriko']
+
+        if len(args) == 1:
+            if args[0] == 't':
+                msg = random.choice(tank_characters)
+            elif args[0] == 's':
+                msg = random.choice(support_characters)
+            else:
+                msg = random.choice(dps_characters)
+        else:
+            msg = random.choice(dps_characters)
+        
+        await ctx.send(msg)
+
+
+
+    @disc_cmds.command(name='vote')
+    async def duckpoll(self, ctx, *args):
+        if not args:
+            return
+            
+        duck_up = '<:duck_up:1071706220043452518>'
+        duck_down = '<:duck_down:1071706217845624842>'
+        
+        monkeys_role = discord.utils.get(ctx.guild.roles, name="Monkeys")
+        everyone = discord.utils.get(ctx.guild.roles, name="everyone")
+        poll_message = " ".join(args)
+
+        if " -e " in poll_message:
+            message = await ctx.send(f"***\\*QUACK\\** DUCK POLL BELOW! {everyone.mention}\n----------------------------------------------** \n {poll_message}")
+        elif " -m " in poll_message:
+            message = await ctx.send(f"***\\*QUACK\\** DUCK POLL BELOW! {monkeys_role.mention}\n----------------------------------------------** \n {poll_message}")
+        else:
+            message = await ctx.send(f"***\\*QUACK\\** DUCK POLL BELOW! \n----------------------------------------------** \n {poll_message}")
+
+        await message.add_reaction(duck_up)
+        await message.add_reaction(duck_down)
+
+
+
+    @disc_cmds.command(name='announce')
+    async def announce(self, ctx, *args):
+        if len(args) == 0 or ctx.message.channel.id != 845824966561890354:
+            return
+        if not discord.utils.get(ctx.message.author.roles, name='Admin'):
+            await ctx.send("You don't have permission to make an announcement.")
+            return
+
+        monkeys_role = discord.utils.get(ctx.guild.roles, name="Monkeys")
+        announcement = " ".join(args)
+        ann_channel = self.bot.get_channel(257701006521925633)
+
+        await ann_channel.send(f"***\\*QUACK\\** ANNOUNCEMENT INCOMING! {monkeys_role.mention}\n--------------------------------------------------------** \n {announcement}")
 
 
 
