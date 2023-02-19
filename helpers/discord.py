@@ -13,17 +13,3 @@ async def send_msg_to(server: discord.Guild, channel: discord.TextChannel, msg, 
         await send_channel.send(content=msg, file=attachment)
     else:
         await send_channel.send(content=msg)
-
-
-class PaginatedMessage(disc_cmds.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-        self.paged_msg = None
-
-    @disc_cmds.Cog.listener(name='on_raw_reaction_add')
-    async def switch_page(self, reaction):
-        if reaction.member != self.bot.user:
-            pass
-
-    def cmd_triggered(self, msg):
-        self.paged_msg = msg

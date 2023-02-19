@@ -1,22 +1,22 @@
 import random
 import string
 
+
 def generate_duck():
-    
     quuuaaaaaaaaaaak = [
-    'wak',
-    'kwa',
-    'quack',
-    'quack-quak-quack',
-    'quackity',
-    'kwak',
-    'waaak',
-    'honk',
-    'honk-gah-quack',
-    'quack-waaak-kwak-wak',
-    'bok',
-    'wok',
-    'quuuaaaaaaaaaaak'
+        'wak',
+        'kwa',
+        'quack',
+        'quack-quak-quack',
+        'quackity',
+        'kwak',
+        'waaak',
+        'honk',
+        'honk-gah-quack',
+        'quack-waaak-kwak-wak',
+        'bok',
+        'wok',
+        'quuuaaaaaaaaaaak'
     ]
     quackQuackQuack = ['.', '...', '!', '?']
     wok = [15, 30, 75]
@@ -52,15 +52,16 @@ def generate_duck():
 
     return honkGahQuack
 
+
 async def on_message(message):
-        if message.author.id == 328965253314379778 and not message.author.is_on_mobile() and message.channel.name == 'argle-bargle':
-            pcheck = 0
-            ccheck = False
-            for i in message.content:
-                if i in string.punctuation:
-                    pcheck += 1
-                if i.isupper():
-                    ccheck = True
-            if ccheck and pcheck > 2:
-                say = generate_duck()
-                #await message.reply(say, mention_author=False)
+    if message.author.id == 328965253314379778 and not message.author.is_on_mobile() and message.channel.name == 'argle-bargle':
+        pcheck = 0
+        ccheck = False
+        for i in message.content:
+            if i in string.punctuation:
+                pcheck += 1
+            if i.isupper():
+                ccheck = True
+        if ccheck and pcheck > 2:
+            say = generate_duck()
+            # await message.reply(say, mention_author=False)
