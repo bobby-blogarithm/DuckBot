@@ -1,9 +1,9 @@
 import asyncio
-from datetime import datetime
-from math import floor
-import random
 import json
 import os
+import random
+from datetime import datetime
+from math import floor
 
 import discord
 import discord.ext.commands as disc_cmds
@@ -18,8 +18,6 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
     def __init__(self, bot):
         self.bot = bot
 
-
-
     @disc_cmds.command(name='say')
     async def say(self, ctx, server: discord.Guild, channel: discord.TextChannel, msg):
         owner = await self.bot.is_owner(ctx.author)
@@ -28,14 +26,12 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         else:
             print('You are not the owner')
 
-
-
     @disc_cmds.command(name='leaderboard')
     async def reminder_leaderboard(self, ctx):
         if os.path.isfile('data/leaderboard.json'):
             with open('data/leaderboard.json') as file:
                 data = json.load(file)
-        
+
         l_embed = discord.Embed(color=discord.Color.teal())
         l_embed.title = 'Leaderboard Rankings'
         rank = 1
@@ -52,8 +48,6 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
 
         await ctx.send(embed=l_embed)
 
-
-
     @disc_cmds.command(name='duckfact')
     async def duck_fact(self, ctx, *args):
         if len(args) > 0:
@@ -68,8 +62,6 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
 
         await ctx.send(embed=fact_embed)
 
-
-
     @disc_cmds.command(name='quack')
     async def duck_speak(self, ctx, *args):
         if len(args) > 0:
@@ -79,16 +71,16 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
 
         await ctx.send(duck_say)
 
-
-
     @disc_cmds.command(name='r')
     async def roll_ow(self, ctx, *args):
         if len(args) > 1:
             await ctx.send(content='Invalid number of arguments, please try again.')
             return None
-        dps_characters = ['Ashe','Bastion','Sojurn','Echo','Genji','Hanzo','Junkrat','McCree','Mei','Pharah','Reaper','Soldier: 76','Sombra','Symmetra', 'Torbjörn','Tracer','Widowmaker']
-        tank_characters = ['D.Va','Orisa','Reinhardt','Roadhog','Sigma','Winston','Wrecking Ball','Zarya','Doomfist','Junker Queen','Ramattra']
-        support_characters = ['Ana','Baptiste','Lúcio','Mercy','Moira','Brigitte','Zenyatta','Kiriko']
+        dps_characters = ['Ashe', 'Bastion', 'Sojurn', 'Echo', 'Genji', 'Hanzo', 'Junkrat', 'McCree', 'Mei', 'Pharah',
+                          'Reaper', 'Soldier: 76', 'Sombra', 'Symmetra', 'Torbjörn', 'Tracer', 'Widowmaker']
+        tank_characters = ['D.Va', 'Orisa', 'Reinhardt', 'Roadhog', 'Sigma', 'Winston', 'Wrecking Ball', 'Zarya',
+                           'Doomfist', 'Junker Queen', 'Ramattra']
+        support_characters = ['Ana', 'Baptiste', 'Lúcio', 'Mercy', 'Moira', 'Brigitte', 'Zenyatta', 'Kiriko']
 
         if len(args) == 1:
             if args[0] == 't':
@@ -99,34 +91,33 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
                 msg = random.choice(dps_characters)
         else:
             msg = random.choice(dps_characters)
-        
+
         await ctx.send(msg)
-
-
 
     @disc_cmds.command(name='vote')
     async def duckpoll(self, ctx, *args):
         if not args:
             return
-            
+
         duck_up = '<:duck_up:1071706220043452518>'
         duck_down = '<:duck_down:1071706217845624842>'
-        
+
         monkeys_role = discord.utils.get(ctx.guild.roles, name="Monkeys")
         everyone = discord.utils.get(ctx.guild.roles, name="everyone")
         poll_message = " ".join(args)
 
         if " -e " in poll_message:
-            message = await ctx.send(f"***\\*QUACK\\** DUCK POLL BELOW! {everyone.mention}\n----------------------------------------------** \n {poll_message}")
+            message = await ctx.send(
+                f"***\\*QUACK\\** DUCK POLL BELOW! {everyone.mention}\n----------------------------------------------** \n {poll_message}")
         elif " -m " in poll_message:
-            message = await ctx.send(f"***\\*QUACK\\** DUCK POLL BELOW! {monkeys_role.mention}\n----------------------------------------------** \n {poll_message}")
+            message = await ctx.send(
+                f"***\\*QUACK\\** DUCK POLL BELOW! {monkeys_role.mention}\n----------------------------------------------** \n {poll_message}")
         else:
-            message = await ctx.send(f"***\\*QUACK\\** DUCK POLL BELOW! \n----------------------------------------------** \n {poll_message}")
+            message = await ctx.send(
+                f"***\\*QUACK\\** DUCK POLL BELOW! \n----------------------------------------------** \n {poll_message}")
 
         await message.add_reaction(duck_up)
         await message.add_reaction(duck_down)
-
-
 
     @disc_cmds.command(name='announce')
     async def announce(self, ctx, *args):
@@ -140,9 +131,8 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         announcement = " ".join(args)
         ann_channel = self.bot.get_channel(257701006521925633)
 
-        await ann_channel.send(f"***\\*QUACK\\** ANNOUNCEMENT INCOMING! {monkeys_role.mention}\n--------------------------------------------------------** \n {announcement}")
-
-
+        await ann_channel.send(
+            f"***\\*QUACK\\** ANNOUNCEMENT INCOMING! {monkeys_role.mention}\n--------------------------------------------------------** \n {announcement}")
 
     @disc_cmds.command(name='timer')
     async def timer(self, ctx, *args):
@@ -204,14 +194,12 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         await asyncio.sleep(time_diff.total_seconds())
         await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is up!', delete_after=300.0)
 
-
-
     @disc_cmds.command(name='cum')
     async def cum(self, ctx, *args):
         if os.path.isfile('data/cum.json'):
             with open('data/cum.json') as file:
                 data = json.load(file)
-        
+
         c_embed = discord.Embed(color=0xFFFFFF)
         c_embed.title = 'The Cum Count'
         rank = 1
