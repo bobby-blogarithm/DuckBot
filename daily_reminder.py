@@ -86,10 +86,10 @@ class DailyReminder:
                     data = json.load(file)
 
                     # Modify the data
-                    if msg_user in data:
-                        data[msg_user] += 10
+                    if msg_user.name in data:
+                        data[msg_user.name] += 10
                     else:
-                        data[msg_user] = 10
+                        data[msg_user.name] = 10
 
                     # Write the modified data back to the file
                     file.seek(0)
