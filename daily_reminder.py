@@ -1,116 +1,97 @@
-import asyncio
 import datetime as dt
-import glob
+import pytz
 import random
-
+import os
 import discord
+import json
 
 import helpers.discord as discord_helpers
-import helpers.time as time_helpers
-from economy import Economy
+
+from duck_facts import get_image
 
 
 class DailyReminder:
     def __init__(self, bot):
-        self.lock = asyncio.Lock()
-        self.cd = 0
-        self.prev = None
         self.bot = bot
-        self.econ = Economy.get_instance(self.bot.remind_server)
-        self.capturer = None
-        self.reminder_phrases = ['Have a reminder!', 'Don\'t forget!']
-        self.remind_msg = 'Congratulations! You\'re the first message of the day.'
-        # List all images in /images directory as possible attachments
-        # Matches extension *g  (png, jpg, etc)
-        self.remind_attach = glob.glob('images/*.*g')
+        self.remind_title = ["Congratulations!", "Great job!", "Awesome work!", "Well done!", "You nailed it!", "Fantastic!", "Outstanding!", "Excellent work!", "Impressive!", "Brilliant job!", "Superb!", "Amazing work!", "You're a rockstar!", "Keep up the great work!", "Way to go!", "Terrific job!", "You're killing it!", "Fabulous!", "Sensational!", "Exceptional work!", "You're a superstar!", "Remarkable job!", "Incredible!", "You're crushing it!", "Top-notch!", "Stellar job!", "You're a champ!", "Splendid!", "You're a winner!", "Breathtaking!", "You're amazing!", "You're unstoppable!", "You're a shining star!", "You're a superstar!", "You're one in a million!", "You're a star performer!", "You're a wizard!", "You're a miracle worker!", "You're the best!", "You're a virtuoso!", "You're a pro!", "You're a natural!", "You're a gifted problem solver!", "You're a gifted communicator!", "You have an amazing attitude!", "You're an invaluable part of the team!", "You're a real people person!", "You have a heart of gold!", "You're a true professional!", "You're a valued member of the team!", "You're a respected leader!", "You have an exceptional work ethic!", "You're a real go-getter!", "You have a positive influence on others!", "You're a true friend!", "You're an outstanding asset to the team!", "You have a sharp mind!", "You're a true visionary!", "You have an amazing spirit!", "You're an extraordinary problem solver!", "You're a natural leader!", "You're a skilled negotiator!"]
+        self.remind_msg = '<:duck_up:1071706220043452518> The first message of the day, enjoy your points <:duck_up:1071706220043452518>'
+        self.remind_img = None
+        self.tz = pytz.timezone('America/Phoenix')
 
-    def set_reminder(self, capturer: discord.User, new_msg, new_attach):
-        if capturer == self.capturer:
-            self.remind_msg = new_msg
-            self.remind_attach = new_attach
 
-    async def remind(self, message):
-        # Extract information about the message
-        msg_server = message.guild
-        msg_channel = message.channel
-        msg_user = message.author
-        send_time = message.created_at
 
-        # Reminder server info
-        remind_server = self.bot.remind_server
-        remind_channel = self.bot.remind_channel
+    async def build_remind(self):
+        self.remind_img = await get_image(self.bot.unsplash_access)
+
+        # Reminder
+        embed = discord.Embed(color=discord.Color.gold())
+        embed.title = random.choice(self.remind_title)
+        embed.description = self.remind_msg
+        embed.set_image(url=self.remind_img)
+        return embed
+
+
+
+    async def remind(self, msg):
+        # Message info
+        channel = msg.channel
+        msg_user = msg.author
+        send_time = msg.created_at.replace(tzinfo=pytz.utc).astimezone(self.tz)
+
+        #Time info
+        now = dt.datetime.now(self.tz)
 
         # If this bot was the one who sent the message or the bot receives a DM, then ignore
-        if msg_user == self.bot.user or not msg_server or not msg_channel:
+        if msg_user == self.bot.user: #or msg.channel.id != 257701006521925633:
             return None
 
-        # Convert the message time from UTC to AZ time
-        send_time = time_helpers.convert_tz(send_time, 'UTC', 'America/Phoenix')
+        if not os.path.isfile('data/remind.txt'):
+            fresh = now - dt.timedelta(days=2)
+            with open('data/remind.txt', "w") as file:
+                file.write(fresh.strftime('%Y/%m/%d'))
+            
+        with open('data/remind.txt', 'r') as file:
+            file_contents = file.read()
+        last_date = self.tz.localize(dt.datetime.strptime(file_contents, '%Y/%m/%d'))
 
-        # The earliest time to find the previous reminder is at yesterday 6 am
-        yesterday_time = send_time - dt.timedelta(days=1)
-        yesterday_time = yesterday_time.replace(hour=6, minute=0, second=0, microsecond=0)
-        earliest_prev_time = time_helpers.convert_tz(yesterday_time, 'America/Phoenix', 'UTC')
-        earliest_prev_time = earliest_prev_time.replace(tzinfo=None)
+        if send_time.hour >= 0 and send_time.hour < 6:
+            if (send_time - last_date).days > 1:
+                await channel.send(embed=await self.build_remind())
+                with open('data/remind.txt', "w") as file:
+                    file.write((now - dt.timedelta(days=1)).strftime('%Y/%m/%d'))
+                
+                with open('data/leaderboard.json', 'r+') as file:
+                    # Load the data from the file
+                    data = json.load(file)
 
-        # Get the last reminder this bot sent
-        if not self.prev:
-            # The last reminder sent by the bot is identified by the message content containing one of the reminder phrases
-            last_message_conds = lambda m: m.author == self.bot.user and any(
-                phrase for phrase in self.reminder_phrases if phrase in m.content)
+                    # Modify the data
+                    if msg_user.name in data:
+                        data[msg_user.name] += 10
+                    else:
+                        data[msg_user.name] = 10
 
-            # Get the last reminder and the capturer of the reminder
-            msg_history = msg_channel.history(after=earliest_prev_time, oldest_first=False)
-            last_message = None
-            prev_msg = None
-            async for msg in msg_history:
-                if last_message_conds(msg):
-                    last_message = msg
-                    self.prev = msg
-                    self.capturer = prev_msg.author
-                    break
-                prev_msg = msg
+                    # Write the modified data back to the file
+                    file.seek(0)
+                    json.dump(data, file)
+                    file.truncate()
+
         else:
-            last_message = self.prev
+            if (send_time - last_date).days > 0:
+                await channel.send(embed=await self.build_remind())
+                with open('data/remind.txt', "w") as file:
+                    file.write(now.strftime('%Y/%m/%d'))
+                
+                with open('data/leaderboard.json', 'r+') as file:
+                    # Load the data from the file
+                    data = json.load(file)
 
-        # Check that we haven't already sent a reminder today
-        if last_message:
-            last_message_time = time_helpers.convert_tz(last_message.created_at, 'UTC', 'America/Phoenix')
+                    # Modify the data
+                    if msg_user in data:
+                        data[msg_user] += 10
+                    else:
+                        data[msg_user] = 10
 
-            # If we are still on cooldown then send back
-            if self.cd and (send_time - self.cd) < last_message_time:
-                return None
-
-            # Last reminder was not sent today (or later)
-            if last_message_time.date() >= send_time.date() or send_time.hour < 6:
-                return None
-
-        # If the server and channel the message came from are not the server and channel we want to remind
-        # then ignore
-        if msg_server.name != remind_server or msg_channel.name != remind_channel:
-            return None
-
-        # Apply one of the reminder phrases to the reminder message (append if there is an attachment, pre-append if not)
-        curr_reminder_phrase = random.sample(self.reminder_phrases, 1)[0]
-        curr_remind_attach = random.sample(self.remind_attach, 1)[0]
-        reminder_parts = [self.remind_msg, curr_reminder_phrase] if curr_remind_attach else [curr_reminder_phrase,
-                                                                                             self.remind_msg]
-        full_reminder = ' '.join(reminder_parts)
-
-        # Send the daily reminder if all these checks are passed and set the previous daily reminder to this one
-        self.prev = await discord_helpers.send_msg_to(msg_server, msg_channel, full_reminder, curr_remind_attach)
-        self.capturer = msg_user
-
-        # Add points to the user that triggered this then save it
-        self.econ.add(msg_user.id, 10)
-        self.econ.save()
-
-        # Set the cooldown for the daily reminder until tomorrow at 6 am
-        tomorrow_time = send_time + dt.timedelta(days=1)
-        self.cd = tomorrow_time.replace(hour=6, minute=0, second=0, microsecond=0) - send_time
-
-
-        # if time > 6 am (epoch time) and not triggered, then trigger and update tracker to triggered for the day (store epoch time for 6am that day)
-        # else don't trigger
-        # if time >12am and <6am and not triggered then triggered and update tracker to triggered for the day
-        # else don't trigger
+                    # Write the modified data back to the file
+                    file.seek(0)
+                    json.dump(data, file)
+                    file.truncate()

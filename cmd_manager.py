@@ -2,13 +2,15 @@ import asyncio
 from datetime import datetime
 from math import floor
 import random
+import json
+import os
 
 import discord
 import discord.ext.commands as disc_cmds
 import parsedatetime
 
 import helpers.discord as discord_helpers
-from duck_facts import DuckFact
+from duck_facts import get_fact, get_image
 from quack import generate_duck
 
 
@@ -30,23 +32,34 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
 
     @disc_cmds.command(name='leaderboard')
     async def reminder_leaderboard(self, ctx):
-        await ctx.send("Leaderboard is under maintenance! Please check back later <:duck_up:1071706220043452518>")
+        if os.path.isfile('data/leaderboard.json'):
+            with open('data/leaderboard.json') as file:
+                data = json.load(file)
+        
+        l_embed = discord.Embed(color=discord.Color.teal())
+        l_embed.title = 'Leaderboard Rankings'
+        rank = 1
+        for name, points in sorted(data.items(), key=lambda x: x[1], reverse=True):
+            if rank == 1:
+                l_embed.add_field(name=f'#{rank}', value=f'**```🥇{name}: {points}```**')
+            elif rank == 2:
+                l_embed.add_field(name=f'#{rank}', value=f'**```🥈{name}: {points}```**')
+            elif rank == 3:
+                l_embed.add_field(name=f'#{rank}', value=f'**```🥉{name}: {points}```**')
+            else:
+                l_embed.add_field(name=f'#{rank}', value=f'{name}: {points}')
+            rank += 1
+
+        await ctx.send(embed=l_embed)
 
 
 
     @disc_cmds.command(name='duckfact')
     async def duck_fact(self, ctx, *args):
         if len(args) > 0:
-            await ctx.send(content='Invalid number of arguments, please try again.')
             return None
-        duck = DuckFact()
-        # If an Unsplash access key is defined, get a random image from there
-        # Otherwise use locally defined URLs
-        if not self.bot.unsplash_access:
-            image = duck.get_image().strip()
-        else:
-            image = await duck.get_image_unsplash(self.bot.unsplash_access)
-        fact, fact_num = duck.get_fact()
+        image = await get_image(self.bot.unsplash_access)
+        fact, fact_num = get_fact()
 
         fact_embed = discord.Embed()
         fact_embed.title = f'Duck Fact #{fact_num}'
@@ -190,3 +203,23 @@ class CommandManager(disc_cmds.Cog, name='CommandManager'):
         # Here we use actual timediff here to make our timer as accurate as possible
         await asyncio.sleep(time_diff.total_seconds())
         await ctx.send(content=f'<@{ctx.author.id}> The {padded_name}timer is up!', delete_after=300.0)
+
+
+
+    @disc_cmds.command(name='cum')
+    async def cum(self, ctx, *args):
+        if os.path.isfile('data/cum.json'):
+            with open('data/cum.json') as file:
+                data = json.load(file)
+        
+        c_embed = discord.Embed(color=0xFFFFFF)
+        c_embed.title = 'The Cum Count'
+        rank = 1
+        for name, count in sorted(data.items(), key=lambda x: x[1], reverse=True):
+            if rank == 1:
+                c_embed.add_field(name=f'#{rank}', value=f'😈 {name}: {count}')
+            else:
+                c_embed.add_field(name=f'#{rank}', value=f'{name}: {count}')
+            rank += 1
+
+        await ctx.send(embed=c_embed)
