@@ -1,5 +1,8 @@
+import discord
 import discord.ext.commands as disc_cmds
 import yaml
+import nest_asyncio
+import asyncio
 
 from cmd_manager import CommandManager
 from listen_manager import ListenerManager
@@ -21,19 +24,25 @@ class DuckBot(disc_cmds.Bot):
             self.unsplash_access = self.config['unsplash-access']
         else:
             self.unsplash_access = None
+        if 'pin-channel' in self.config:
+            self.pin_channel = self.config['pin-channel']
+        else:
+            self.pin_channel = None
 
-        # Attach cogs to bot
-        self.add_cog(CommandManager(self))
-        self.add_cog(ListenerManager(self))
 
-
-def main():
+async def main():
     # Create client for bot
-    client = DuckBot(command_prefix='?')
+    intents = discord.Intents.all()
+    client = DuckBot(command_prefix='?', intents=intents)
+
+    # Attach cogs to bot
+    await client.add_cog(CommandManager(client))
+    await client.add_cog(ListenerManager(client))
 
     # Connect client to discord
     client.run(client.token)
 
 
 if __name__ == '__main__':
-    main()
+    nest_asyncio.apply()
+    asyncio.run(main())
