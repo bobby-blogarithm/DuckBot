@@ -51,6 +51,8 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
     async def on_pin_reaction(self, reaction_event):
         if reaction_event.emoji.name != '📌':
             return
+        if reaction_event.user_id == self.bot.user.id
+            return
 
         # Get the destination channel
         channel = discord.utils.get(self.bot.current_guild.text_channels, name=self.bot.pin_channel)
@@ -60,19 +62,24 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
 
         pin_msg = await self.bot.current_guild.get_channel(reaction_event.channel_id)\
             .fetch_message(reaction_event.message_id)
+        if pin_msg.channel == channel:
+            # message cannot be on the pin channel
+            return
+        
         reaction = next((r for r in pin_msg.reactions if r.emoji == '📌'), None)
         if not reaction:
             print(f'Warning: 📌 emoji not found among the reactions, message id: {reaction_event.message_id}')
-
-        # Prevent the double-pinning
-        # 1. message cannot be already pinned
-        # 2. message cannot be on the pin channel
-        if reaction.count > 1 or pin_msg.channel == channel:
             return
 
         users = [user async for user in reaction.users()]
+        if self.bot.user.id in [user.id for user in users]:
+            # message is already pinned
+            return
+        
+        # Mark as pinned to prevent the double-pinning
+        await pin_msg.add_reaction('📌')
+        
         pin_requester = users[0].id
-
         msg_author = pin_msg.author.id
         msg_content = pin_msg.content
         # Cap the message length at 600
