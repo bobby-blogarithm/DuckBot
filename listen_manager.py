@@ -73,11 +73,11 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
         users = [user async for user in reaction.users()]
         pin_requester = users[0].id
 
-        msg_author = pin_msg.author.display_name
+        msg_author = pin_msg.author.id
         msg_content = pin_msg.content
-        # Cap the message length at 300
-        if len(msg_content) > 300:
-            msg_content = msg_content[:300] + '...'
+        # Cap the message length at 600
+        if len(msg_content) > 600:
+            msg_content = msg_content[:600] + '...'
         msg_channel = pin_msg.channel
         msg_link = pin_msg.jump_url
         msg_attachments = pin_msg.attachments
@@ -86,27 +86,32 @@ class ListenerManager(disc_cmds.Cog, name='ListenerManager'):
         msg_embed = pin_msg.embeds
 
         # Assemble the pin message
-        content = f'<@{pin_requester}> just pinned the message below from <#{msg_channel.id}>'
+        content = f'<@{pin_requester}> just pinned a message from <#{msg_channel.id}>'
         embed = discord.Embed()
-        embed.title = msg_author
-        embed.description = f'{msg_content} \n\n'
-        embed.description += f'**[Jump to the message]({msg_link})**'
+        # embed.title = msg_author
+        embed.description = f'<@{msg_author}>: {msg_content}'
 
         # Only take the first attachment/embed if there are any
         if msg_attachments:
             attachment_url = msg_attachments[0].url
-
             embed.set_image(url=attachment_url)
+
+            # Embeds doesn't support videos, show its filename instead
+            if 'video' in msg_attachments[0].content_type:
+                embed.description += f'\n`<{msg_attachments[0].filename}>`'
 
         embeds = []
 
         # Example timestring: 06/14/2022 6:03 PM MST
         msg_time_mst = (msg_time - datetime.timedelta(hours=7)).strftime('%m/%d/%Y %I:%M %p MST')
-        embed.set_footer(text=f'Message ID {msg_id}, posted {msg_time_mst}')
+        embed.set_footer(text=f'Message ID {msg_id} · Posted {msg_time_mst}')
         embeds.append(embed)
 
         if msg_embed:
             embeds.append(msg_embed[0])
 
-        await channel.send(content=content, embeds=embeds)
+        embed.description += f'\n\n**[Jump to the message]({msg_link})**'
+
+        # Mention the users but do not actually ping them
+        await channel.send(content=content, embeds=embeds, allowed_mentions=discord.AllowedMentions.none())
 
