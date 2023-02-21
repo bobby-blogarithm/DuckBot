@@ -8,3 +8,6 @@ images/
 __pycache__/
 data/
 venv/
+backup_scrape_code.txt
+sus.txt
+messages.sqlite
